@@ -61,6 +61,7 @@ export interface DetectionSnapshot {
   firstFaceBox?: FaceBox | null;
   detectedAt?: string;
   embedding?: number[];
+  imageDataUrl?: string;
 }
 
 export interface CommandResultPayload {

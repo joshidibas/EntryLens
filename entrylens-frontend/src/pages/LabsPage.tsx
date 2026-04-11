@@ -1,12 +1,12 @@
 import type { ChangeEvent } from "react";
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CameraPanel from "../components/CameraPanel";
-import LiveFeed from "../components/LiveFeed";
-import { fetchLabsFileBlob, getLabsState, runLabsCommand } from "../api/labs";
+import { getLabsState } from "../api/labs";
+import { addEmbeddingToIdentity, listIdentities, type IdentitySummary } from "../api/identities";
 import { enroll, EnrollResponse } from "../api/enroll";
-import { recognize, RecognizeResponse } from "../api/recognize";
+import { useRecognitionSession } from "../hooks/useRecognitionSession";
 import { useMediaPipeLab } from "../hooks/useMediaPipeLab";
-import type { CommandResultPayload, DetectionSnapshot, LabModel, LabStatePayload, LabTarget, OperationId } from "../types";
+import type { CommandResultPayload, LabModel, LabStatePayload, LabTarget, OperationId } from "../types";
 
 const FALLBACK_TARGETS: LabTarget[] = [
   { id: "mediapipe", label: "MediaPipe", description: "Local browser-side face detection and landmark playground.", status: "ready", operation: "detect", engine_kind: "local", models: [{ id: "face-landmarker", label: "Face Landmarker", description: "Browser-side landmarks and pose gating." }] },
@@ -26,15 +26,28 @@ export default function LabsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [commandResult, setCommandResult] = useState<CommandResultPayload | null>(null);
+  const [, setCommandResult] = useState<CommandResultPayload | null>(null);
   const [busyCommand, setBusyCommand] = useState("");
   const [personName, setPersonName] = useState("");
-  const [liveDetection, setLiveDetection] = useState<DetectionSnapshot | null>(null);
-  const [localTab, setLocalTab] = useState<"enroll" | "identify">("enroll");
-  const [identifyResult, setIdentifyResult] = useState<{name: string; similarity: number} | null>(null);
-  const [isIdentifying, setIsIdentifying] = useState(false);
-  const lastIdentifiedFaceRef = useRef<string>("");
-  const mediaPipeLab = useMediaPipeLab();
+  const [localTab, setLocalTab] = useState<"enroll" | "identify">("identify");
+  const [identities, setIdentities] = useState<IdentitySummary[]>([]);
+  const [selectedIdentityId, setSelectedIdentityId] = useState("");
+  const [unknownName, setUnknownName] = useState("");
+  const [unknownActionBusy, setUnknownActionBusy] = useState("");
+  useMediaPipeLab();
+  const {
+    liveDetection,
+    identifyResult,
+    candidateMatches,
+    isIdentifying,
+    handleDetectionChange,
+    runRecognition,
+    setIdentifyResult,
+    setCandidateMatches,
+  } = useRecognitionSession({
+    includeCandidates: true,
+    onError: (message) => setError(message),
+  });
 
   const targets = lab?.targets ?? FALLBACK_TARGETS;
   const filteredTargets = useMemo(() => targets.filter((target) => target.operation === selectedOperation), [targets, selectedOperation]);
@@ -59,8 +72,12 @@ export default function LabsPage() {
   }
 
   useEffect(() => {
-    refreshState();
+    void refreshState();
   }, [selectedTarget]);
+
+  useEffect(() => {
+    void refreshIdentities();
+  }, []);
 
   async function handleCommand(command: string) {
     setBusyCommand(command);
@@ -81,7 +98,7 @@ export default function LabsPage() {
           setBusyCommand("");
           return;
         }
-        const result: EnrollResponse = await enroll(personName, liveDetection.embedding);
+        const result: EnrollResponse = await enroll(personName, liveDetection.embedding, liveDetection.imageDataUrl);
         if (result.enrolled) {
           setSuccess(`Enrolled as ${result.name}`);
           setPersonName("");
@@ -98,32 +115,92 @@ export default function LabsPage() {
     }
   }
 
+  async function refreshIdentities() {
+    try {
+      const items = await listIdentities();
+      setIdentities(items);
+      if (!selectedIdentityId && items[0]?.id) {
+        setSelectedIdentityId(items[0].id);
+      }
+    } catch {
+      // Keep the current screen usable even if identity listing fails.
+    }
+  }
+
+  async function handleCreateFromUnknown() {
+    if (!unknownName || !liveDetection?.embedding) {
+      setError("Enter a name and keep a face visible before creating a new person.");
+      return;
+    }
+
+    setUnknownActionBusy("create");
+    setError("");
+    setSuccess("");
+    try {
+      const result = await enroll(unknownName, liveDetection.embedding, liveDetection.imageDataUrl);
+      if (!result.enrolled) {
+        setError(result.message || "Enrollment failed.");
+        return;
+      }
+      setSuccess(`Created ${result.name} from the current unknown face sample.`);
+      setUnknownName("");
+      setCandidateMatches([]);
+      setIdentifyResult({
+        matched: true,
+        identityId: result.subject_id,
+        name: result.name,
+        similarity: 1,
+      });
+      await refreshIdentities();
+      if (result.subject_id) {
+        setSelectedIdentityId(result.subject_id);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not create a new person.");
+    } finally {
+      setUnknownActionBusy("");
+    }
+  }
+
+  async function handleAddSampleToExisting() {
+    if (!selectedIdentityId || !liveDetection?.embedding) {
+      setError("Choose an existing person and keep a face visible before adding a sample.");
+      return;
+    }
+
+    setUnknownActionBusy("append");
+    setError("");
+    setSuccess("");
+    try {
+      const selectedCandidate = candidateMatches.find((item) => item.identity_id === selectedIdentityId);
+      const result = await addEmbeddingToIdentity(
+        selectedIdentityId,
+        liveDetection.embedding,
+        selectedCandidate?.similarity,
+        liveDetection.imageDataUrl,
+      );
+      const selectedIdentity = identities.find((item) => item.id === selectedIdentityId);
+      setSuccess(result.message || `Added a new sample to ${selectedIdentity?.display_name ?? "the selected person"}.`);
+      setCandidateMatches([]);
+      await refreshIdentities();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not add a new sample to this person.");
+    } finally {
+      setUnknownActionBusy("");
+    }
+  }
+
   return (
     <section className="lab-layout">
-      <section className="panel">
-        <div className="panel-header">
-          <div>
-            <p className="eyebrow">Labs</p>
-            <h3>Vision Lab</h3>
-          </div>
-          <span className="panel-tag">{OPERATIONS.find((item) => item.id === selectedOperation)?.label}{isPlanned ? " Planned" : ""}</span>
-        </div>
-
-        <div className="selector-grid">
-          <label>Task<select value={selectedOperation} onChange={(event: ChangeEvent<HTMLSelectElement>) => setSelectedOperation(event.target.value as OperationId)}>{OPERATIONS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
-          <label>Engine / Provider<select value={currentTarget?.id ?? ""} onChange={(event: ChangeEvent<HTMLSelectElement>) => setSelectedTarget(event.target.value)}>{filteredTargets.map((target) => <option key={target.id} value={target.id}>{target.label}</option>)}</select></label>
-        </div>
-
-        {error ? <p className="error-banner">{error}</p> : null}
-        {success ? <p className="success-banner">{success}</p> : null}
-      </section>
-
       {!isPlanned && isRecognize && isLocalRecognition ? (
         <section className="panel">
           <div className="panel-header">
             <div><p className="eyebrow">Local Recognition</p><h3>Enrollment & Identification</h3></div>
           </div>
-          
+
+          {error ? <p className="error-banner">{error}</p> : null}
+          {success ? <p className="success-banner">{success}</p> : null}
+
           <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
             <button type="button" onClick={() => { setLocalTab("enroll"); setIdentifyResult(null); }} style={{ padding: "0.5rem 1rem", backgroundColor: localTab === "enroll" ? "#3b82f6" : "#e5e7eb", color: localTab === "enroll" ? "white" : "#374151", border: "none", borderRadius: "4px", cursor: "pointer" }}>Enroll</button>
             <button type="button" onClick={() => { setLocalTab("identify"); setIdentifyResult(null); }} style={{ padding: "0.5rem 1rem", backgroundColor: localTab === "identify" ? "#3b82f6" : "#e5e7eb", color: localTab === "identify" ? "white" : "#374151", border: "none", borderRadius: "4px", cursor: "pointer" }}>Identify</button>
@@ -133,51 +210,104 @@ export default function LabsPage() {
             <>
               <p className="helper-copy">Enter your name, position your face in the camera, then click Enroll.</p>
               <label style={{ marginBottom: "0.5rem", display: "block" }}>Your name<input value={personName} onChange={(event: ChangeEvent<HTMLInputElement>) => setPersonName(event.target.value)} placeholder="Enter your name" style={{ width: "100%", padding: "0.5rem", marginTop: "0.25rem" }} /></label>
-              <CameraPanel onDetectionChange={setLiveDetection} />
+              <CameraPanel onDetectionChange={handleDetectionChange} />
               <div style={{ marginTop: "0.5rem", fontSize: "0.875rem" }}>
                 {liveDetection?.hasFace ? <span style={{ color: "#22c55e" }}>Face detected</span> : <span style={{ color: "#6b7280" }}>No face detected</span>}
                 {liveDetection?.embedding && <span style={{ marginLeft: "1rem" }}>Embedding ready</span>}
               </div>
-              <button type="button" onClick={() => handleCommand("enroll")} disabled={!personName || !liveDetection?.embedding || busyCommand === "enroll"} style={{ marginTop: "1rem", width: "100%", padding: "0.75rem", backgroundColor: (!personName || !liveDetection?.embedding) ? "#9ca3af" : "#3b82f6", color: "white", border: "none", borderRadius: "4px", fontSize: "1rem", fontWeight: "bold" }}>{busyCommand === "enroll" ? "Enrolling..." : "Enroll"}</button>
+              <button type="button" onClick={() => void handleCommand("enroll")} disabled={!personName || !liveDetection?.embedding || busyCommand === "enroll"} style={{ marginTop: "1rem", width: "100%", padding: "0.75rem", backgroundColor: (!personName || !liveDetection?.embedding) ? "#9ca3af" : "#3b82f6", color: "white", border: "none", borderRadius: "4px", fontSize: "1rem", fontWeight: "bold" }}>{busyCommand === "enroll" ? "Enrolling..." : "Enroll"}</button>
             </>
           ) : (
             <>
               <p className="helper-copy">Live camera with auto-recognition. Your name will appear when recognized.</p>
-              <CameraPanel 
-                onDetectionChange={(det) => {
-                  setLiveDetection(det);
-                  const embKey = det?.embedding ? det.embedding.slice(0, 4).join(",") : "";
-                  if (det?.hasFace && det.embedding && !isIdentifying && embKey !== lastIdentifiedFaceRef.current) {
-                    const emb = det.embedding;
-                    lastIdentifiedFaceRef.current = embKey;
-                    setIdentifyResult(null);
-                    setTimeout(async () => {
-                      setIsIdentifying(true);
-                      try {
-                        const result = await recognize(emb);
-                        if (result.matched) setIdentifyResult({ name: result.name!, similarity: result.similarity });
-                        else setIdentifyResult(null);
-                      } catch (e) { setIdentifyResult(null); }
-                      finally {
-                        setIsIdentifying(false);
-                        setTimeout(() => { lastIdentifiedFaceRef.current = ""; }, 3000);
-                      }
-                    }, 1000);
-                  }
-                }}
-                recognizedName={identifyResult?.name}
+              <CameraPanel
+                onDetectionChange={handleDetectionChange}
+                onRecognize={runRecognition}
+                recognizedName={identifyResult?.matched ? identifyResult.name ?? undefined : undefined}
                 isRecognizing={isIdentifying}
               />
               <div style={{ marginTop: "1rem", fontSize: "0.875rem" }}>
-                {liveDetection?.hasFace ? <span style={{ color: "#22c55e" }}>Face detected</span> : <span style={{ color: "#6b7280" }}>No face detected</span>}
-                {isIdentifying && <span style={{ color: "#3b82f6", marginLeft: "1rem" }}>Recognizing...</span>}
+                <span style={{ color: liveDetection?.hasFace ? "#22c55e" : "#6b7280" }}>
+                  {liveDetection?.hasFace ? `Face ${liveDetection.detectedFaces}` : "No face detected"}
+                </span>
+                {isIdentifying && <span style={{ color: "#3b82f6", marginLeft: "0.5rem" }}>Identifying...</span>}
               </div>
-              {identifyResult && (
+              {identifyResult?.matched && identifyResult.name ? (
                 <div style={{ marginTop: "1rem", padding: "1rem", borderRadius: "8px", backgroundColor: "#dcfce7", border: "2px solid #22c55e" }}>
                   <div style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#166534" }}>{identifyResult.name}</div>
                   <div style={{ fontSize: "0.875rem", color: "#15803d" }}>Confidence: {(identifyResult.similarity * 100).toFixed(1)}%</div>
                 </div>
-              )}
+              ) : null}
+              {!isIdentifying && liveDetection?.hasFace && !identifyResult?.matched ? (
+                <div style={{ marginTop: "1rem", padding: "1rem", borderRadius: "12px", backgroundColor: "#eff6ff", border: "1px solid #bfdbfe", display: "grid", gap: "1rem" }}>
+                  <div>
+                    <div style={{ fontSize: "1rem", fontWeight: 700, color: "#1d4ed8" }}>Unknown face</div>
+                    <div style={{ fontSize: "0.875rem", color: "#334155" }}>
+                      This face is not currently identified. You can create a new person or add this sample to an existing person to widen their embedding variety.
+                    </div>
+                  </div>
+
+                  {candidateMatches.length > 0 ? (
+                    <div style={{ display: "grid", gap: "0.5rem" }}>
+                      <div style={{ fontSize: "0.875rem", fontWeight: 600, color: "#0f172a" }}>Closest existing identities</div>
+                      {candidateMatches.slice(0, 3).map((candidate) => (
+                        <div key={candidate.identity_id} style={{ padding: "0.75rem", borderRadius: "10px", backgroundColor: "white", border: "1px solid #dbeafe" }}>
+                          <div style={{ fontWeight: 600 }}>{candidate.display_name}</div>
+                          <div style={{ fontSize: "0.875rem", color: "#475569" }}>
+                            Match confidence: {(candidate.similarity * 100).toFixed(1)}% · Stored samples: {candidate.sample_count}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  <div style={{ display: "grid", gap: "0.75rem" }}>
+                    <label style={{ display: "grid", gap: "0.35rem" }}>
+                      <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>Create new person</span>
+                      <input
+                        value={unknownName}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) => setUnknownName(event.target.value)}
+                        placeholder="Enter a new name"
+                        style={{ width: "100%", padding: "0.65rem", borderRadius: "8px", border: "1px solid #cbd5e1" }}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => void handleCreateFromUnknown()}
+                      disabled={!unknownName || !liveDetection?.embedding || unknownActionBusy !== ""}
+                      style={{ padding: "0.75rem 1rem", backgroundColor: "#2563eb", color: "white", border: "none", borderRadius: "8px", fontWeight: 700 }}
+                    >
+                      {unknownActionBusy === "create" ? "Creating..." : "Create New Person From This Face"}
+                    </button>
+                  </div>
+
+                  <div style={{ display: "grid", gap: "0.75rem" }}>
+                    <label style={{ display: "grid", gap: "0.35rem" }}>
+                      <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>Add as another sample to existing person</span>
+                      <select
+                        value={selectedIdentityId}
+                        onChange={(event: ChangeEvent<HTMLSelectElement>) => setSelectedIdentityId(event.target.value)}
+                        style={{ width: "100%", padding: "0.65rem", borderRadius: "8px", border: "1px solid #cbd5e1" }}
+                      >
+                        <option value="">Select an existing person</option>
+                        {identities.map((identity) => (
+                          <option key={identity.id} value={identity.id}>
+                            {identity.display_name} ({identity.embedding_count} samples)
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => void handleAddSampleToExisting()}
+                      disabled={!selectedIdentityId || !liveDetection?.embedding || unknownActionBusy !== ""}
+                      style={{ padding: "0.75rem 1rem", backgroundColor: "#0f766e", color: "white", border: "none", borderRadius: "8px", fontWeight: 700 }}
+                    >
+                      {unknownActionBusy === "append" ? "Saving Sample..." : "Add Current Face As Another Sample"}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </>
           )}
         </section>
@@ -187,7 +317,7 @@ export default function LabsPage() {
         <div className="panel-header"><div><p className="eyebrow">Run</p><h3>Commands</h3></div></div>
         {isLocalRecognition ? (
           <div style={{ display: "flex", gap: "0.5rem" }}>
-            <button type="button" onClick={() => handleCommand("enroll")} disabled={busyCommand === "enroll"} style={{ padding: "0.75rem 1rem", backgroundColor: "#3b82f6", color: "white", border: "none", borderRadius: "4px" }}>Enroll</button>
+            <button type="button" onClick={() => void handleCommand("enroll")} disabled={busyCommand === "enroll"} style={{ padding: "0.75rem 1rem", backgroundColor: "#3b82f6", color: "white", border: "none", borderRadius: "4px" }}>Enroll</button>
           </div>
         ) : <p style={{ color: "#6b7280" }}>Select a target to see commands</p>}
       </section>

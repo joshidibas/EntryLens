@@ -1,7 +1,8 @@
 import uuid
 from fastapi import APIRouter, HTTPException
+from app.sample_images import save_sample_image
 from app.schemas.enroll import EnrollRequest, EnrollResponse
-from app.supabase import create_identity, store_embedding, SupabaseClient
+from app.supabase import create_identity, add_embedding_to_identity, SupabaseClient
 
 router = APIRouter(prefix="/enroll", tags=["enrollment"])
 
@@ -22,18 +23,23 @@ async def enroll(request: EnrollRequest):
         subject_id = str(uuid.uuid4())
         
         identity = await create_identity(
-            name=request.name,
-            role=request.role,
+            display_name=request.name,
+            identity_type=request.role,
             provider_subject_id=subject_id
         )
         
         if not identity:
             raise HTTPException(status_code=500, detail="Failed to create identity in Supabase. Check that 'identities' table exists and service key has proper permissions.")
         
-        stored = await store_embedding(
+        image_path = save_sample_image(identity["id"], request.image_data_url)
+
+        stored = await add_embedding_to_identity(
             identity_id=identity["id"],
             embedding=request.embedding,
-            metadata={"name": request.name, "role": request.role}
+            metadata={"name": request.name, "role": request.role},
+            sample_kind="face",
+            image_path=image_path,
+            capture_source="enroll",
         )
         
         if not stored:

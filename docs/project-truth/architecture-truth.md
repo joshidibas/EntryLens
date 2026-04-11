@@ -31,9 +31,15 @@ Current repo truth:
 - a protected lab file route now exists for fetching uploaded playground assets back into the frontend
 - frontend routes exist for `/live`, `/attendance`, and `/enroll`
 - frontend route exists for `/labs`
+- frontend route exists for `/identities/:identityId/add-data` for identity-specific live verification and sample enrichment
 - the `/labs` UI now acts as a shared vision playground with `detect` or `recognize` task selection plus engine/provider and model-profile selection underneath
 - MediaPipe is now a real local detect implementation in that shared lab, not just a placeholder target
 - the active recognition direction is now local recognition plus planned Supabase-backed storage, not Azure
+- `GET /api/v1/identities/sample-image` now serves locally stored sample images from the project runtime folder
+- identity CRUD and sample-management routes are implemented under `/api/v1/identities`
+- local enroll/add-sample flows can now store a captured reference image on disk and surface it in the identities UI
+- frontend live recognition state is now shared through a reusable helper hook rather than duplicated page-specific logic
+- frontend recognition now clears stale labels and re-runs identification when a different person replaces the current face in frame
 - no Docker Compose file exists in the repository
 
 Planned route truth from the architecture document:
@@ -82,6 +88,7 @@ Within the design docs:
 - Current build instructions are in `ENTRYLENS_BUILD_PLAN.md` at root.
 - Original master plan archived at `docs/Planning/archive/ENTRYLENS_MASTER_PLAN_reference.md`.
 - Supabase client module and LocalProvider scaffold have been added to the codebase.
+- sample images are currently stored locally under `runtime-data/identity-samples/` rather than MinIO.
 - The master plan contains many later-story routes and services that are not implemented yet.
 - Encoding artifacts may make some sections look noisy; use meaning, not typography, as the source of truth.
 

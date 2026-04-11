@@ -29,6 +29,25 @@ function toPoint(point: { x: number; y: number; z: number }): MediaPipePoint {
   };
 }
 
+function captureVideoFrameDataUrl(video: HTMLVideoElement): string | undefined {
+  const width = video.videoWidth || video.clientWidth || 0;
+  const height = video.videoHeight || video.clientHeight || 0;
+  if (!width || !height) {
+    return undefined;
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) {
+    return undefined;
+  }
+
+  context.drawImage(video, 0, 0, width, height);
+  return canvas.toDataURL("image/jpeg", 0.85);
+}
+
 function summarizeLandmarks(result: any, image: HTMLImageElement): DetectionSnapshot {
   const faceCount = result.faceLandmarks?.length ?? 0;
   const firstFace = result.faceLandmarks?.[0] ?? [];
@@ -92,6 +111,7 @@ function summarizeVideoLandmarks(result: any, video: HTMLVideoElement): Detectio
       height: Number(firstFaceBox.height.toFixed(1)),
     } : null,
     embedding,
+    imageDataUrl: faceCount > 0 ? captureVideoFrameDataUrl(video) : undefined,
   };
 }
 

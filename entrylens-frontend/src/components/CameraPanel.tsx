@@ -1,8 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useMediaPipeLab } from "../hooks/useMediaPipeLab";
+import { getEmbeddingKey, hasMeaningfulEmbeddingChange } from "../lib/recognition";
 import type { DetectionSnapshot } from "../types";
 
-function drawOverlay(canvas: HTMLCanvasElement | null, snapshot: DetectionSnapshot | null, recognizedName?: string) {
+const MIN_RECOGNITION_INDICATOR_MS = 1200;
+const UNMATCHED_RETRY_MS = 800;
+
+function drawOverlay(
+  canvas: HTMLCanvasElement | null,
+  snapshot: DetectionSnapshot | null,
+  displayLabel: string,
+  recognizedName?: string,
+) {
   const context = canvas?.getContext("2d");
   if (!context) return;
 
@@ -52,8 +61,7 @@ function drawOverlay(canvas: HTMLCanvasElement | null, snapshot: DetectionSnapsh
   context.scale(-1, 1);
   context.fillStyle = recognizedName ? "#22c55e" : "#ecfff9";
   context.font = "14px Segoe UI";
-  const label = recognizedName ? recognizedName : `Faces: ${snapshot.detectedFaces}`;
-  context.fillText(label, -(squareX + 130), Math.max(16, squareY - 11));
+  context.fillText(displayLabel, -(squareX + 130), Math.max(16, squareY - 11));
   context.restore();
 }
 
@@ -64,7 +72,7 @@ export default function CameraPanel({
   isRecognizing
 }: { 
   onDetectionChange?: (snapshot: DetectionSnapshot | null) => void;
-  onRecognize?: (embedding: number[]) => void;
+  onRecognize?: (embedding: number[]) => boolean | Promise<boolean>;
   recognizedName?: string;
   isRecognizing?: boolean;
 }) {
@@ -77,25 +85,118 @@ export default function CameraPanel({
   const [cameraState, setCameraState] = useState("idle");
   const [cameraError, setCameraError] = useState("");
   const [latestSnapshot, setLatestSnapshot] = useState<DetectionSnapshot | null>(null);
+  const [localRecognizing, setLocalRecognizing] = useState(false);
+  const lastAttemptedTimeRef = useRef(0);
+  const lastAttemptedEmbeddingRef = useRef<string>("");
+  const lockedEmbeddingRef = useRef<number[] | null>(null);
+  const wasFacePresentRef = useRef(false);
+  const recognizeRunIdRef = useRef(0);
+  const recognitionLockedRef = useRef(false);
+
+  const recognitionActive = localRecognizing || !!isRecognizing;
+  const isRecognitionMode = !!onRecognize;
+  const statusLabel = !latestSnapshot?.hasFace
+    ? "0"
+    : recognizedName
+      ? recognizedName
+      : isRecognitionMode
+        ? "Unknown"
+        : `Face ${latestSnapshot.detectedFaces}`;
 
   useEffect(() => {
     onDetectionChange?.(latestSnapshot);
   }, [latestSnapshot, onDetectionChange]);
 
+  const faceJustLeft = wasFacePresentRef.current && !latestSnapshot?.hasFace;
+  const faceJustAppeared = !wasFacePresentRef.current && latestSnapshot?.hasFace;
+
+  useEffect(() => {
+    if (faceJustLeft) {
+      lastAttemptedEmbeddingRef.current = "";
+      lastAttemptedTimeRef.current = 0;
+      recognitionLockedRef.current = false;
+      lockedEmbeddingRef.current = null;
+    }
+
+    if (
+      latestSnapshot?.hasFace &&
+      recognitionLockedRef.current &&
+      hasMeaningfulEmbeddingChange(latestSnapshot.embedding, lockedEmbeddingRef.current ?? undefined)
+    ) {
+      recognitionLockedRef.current = false;
+      lockedEmbeddingRef.current = null;
+      lastAttemptedEmbeddingRef.current = "";
+      lastAttemptedTimeRef.current = 0;
+    }
+    wasFacePresentRef.current = !!latestSnapshot?.hasFace;
+  }, [latestSnapshot]);
+
   useEffect(() => {
     if (!onRecognize || !latestSnapshot?.embedding) {
       return;
     }
+    if (recognitionActive) {
+      return;
+    }
+    if (recognitionLockedRef.current) {
+      return;
+    }
+    const currentEmbeddingKey = getEmbeddingKey(latestSnapshot.embedding);
+    const now = Date.now();
+    const isRecentUnmatchedRetry =
+      currentEmbeddingKey &&
+      currentEmbeddingKey === lastAttemptedEmbeddingRef.current &&
+      now - lastAttemptedTimeRef.current < UNMATCHED_RETRY_MS;
+    if (isRecentUnmatchedRetry) {
+      return;
+    }
     const snapshot = latestSnapshot;
-    const timer = setTimeout(() => {
-      onRecognize(snapshot.embedding!);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [latestSnapshot, onRecognize]);
+    const startedAt = Date.now();
+    const runId = recognizeRunIdRef.current + 1;
+    recognizeRunIdRef.current = runId;
+    lastAttemptedEmbeddingRef.current = currentEmbeddingKey;
+    lastAttemptedTimeRef.current = startedAt;
+    console.debug("[CameraPanel] Recognition started", {
+      runId,
+      detectedFaces: snapshot.detectedFaces,
+      embeddingKey: currentEmbeddingKey,
+    });
+    setLocalRecognizing(true);
+
+    void Promise.resolve(onRecognize(snapshot.embedding!))
+      .then((matched) => {
+        if (matched) {
+          recognitionLockedRef.current = true;
+          lockedEmbeddingRef.current = snapshot.embedding ?? null;
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        const elapsed = Date.now() - startedAt;
+        const remaining = Math.max(0, MIN_RECOGNITION_INDICATOR_MS - elapsed);
+        window.setTimeout(() => {
+          if (recognizeRunIdRef.current === runId) {
+            console.debug("[CameraPanel] Recognition indicator cleared", {
+              runId,
+              elapsedMs: Date.now() - startedAt,
+            });
+            setLocalRecognizing(false);
+          }
+        }, remaining);
+      });
+  }, [latestSnapshot, onRecognize, recognitionActive]);
+
+  const overlayLabel = latestSnapshot?.hasFace
+    ? recognizedName
+      ? recognizedName
+      : isRecognitionMode
+        ? "Unknown"
+        : `Faces: ${latestSnapshot.detectedFaces}`
+    : "";
 
   useEffect(() => {
-    drawOverlay(overlayRef.current, latestSnapshot, recognizedName);
-  }, [latestSnapshot, recognizedName]);
+    drawOverlay(overlayRef.current, latestSnapshot, overlayLabel, recognizedName);
+  }, [latestSnapshot, overlayLabel, recognizedName]);
 
   function syncOverlaySize() {
     const video = videoRef.current;
@@ -214,7 +315,10 @@ export default function CameraPanel({
           <p className="eyebrow">Camera</p>
           <h3>Live Entry Feed</h3>
         </div>
-        <span className="panel-tag">{cameraState === "streaming" ? "MediaPipe live" : "Live detect"}</span>
+        <span className="panel-tag">
+          {cameraState === "streaming" ? "MediaPipe live" : "Live detect"}
+          {recognitionActive && " - Identifying"}
+        </span>
       </div>
 
       <div className="camera-status-row">
@@ -228,17 +332,19 @@ export default function CameraPanel({
         </div>
         <div className="status-card">
           <strong>Faces In Frame</strong>
-          <span>{latestSnapshot?.detectedFaces ?? 0}</span>
+          <span>
+            {statusLabel}
+            {recognitionActive ? (
+              <>
+                {" "}
+                <span className="inline-activity">
+                  <span className="inline-activity-spinner" aria-hidden="true" />
+                  Identifying
+                </span>
+              </>
+            ) : null}
+          </span>
         </div>
-      </div>
-
-      <div className="camera-button-row">
-        <button type="button" onClick={startCamera} disabled={cameraState === "starting" || cameraState === "streaming"}>
-          {cameraState === "starting" ? "Starting Camera..." : "Start Camera Detect"}
-        </button>
-        <button type="button" className="ghost-button" onClick={stopCamera} disabled={cameraState === "idle" || cameraState === "stopped"}>
-          Stop Camera
-        </button>
       </div>
 
       {cameraError ? <p className="error-banner">{cameraError}</p> : null}
@@ -247,10 +353,26 @@ export default function CameraPanel({
         <div className="camera-frame live-camera-frame">
           <video ref={videoRef} className="live-camera-video" playsInline muted />
           <canvas ref={overlayRef} className="live-camera-overlay" />
+          {recognitionActive ? (
+            <div className="camera-frame-badge">
+              <span className="inline-activity">
+                <span className="inline-activity-spinner" aria-hidden="true" />
+                Identifying
+              </span>
+            </div>
+          ) : null}
           {cameraState !== "streaming" ? (
             <div className="camera-empty-state">
-              <strong>Live face detection is ready</strong>
-              <span>Start the camera to run MediaPipe detection directly on the browser video feed.</span>
+              {cameraState === "starting" ? (
+                <strong>Starting camera...</strong>
+              ) : (
+                <>
+                  <strong>Start Camera to Begin</strong>
+                  <button type="button" onClick={startCamera} style={{ marginTop: "1rem", padding: "0.75rem 1.5rem", backgroundColor: "#3b82f6", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "1rem" }}>
+                    Start Camera
+                  </button>
+                </>
+              )}
             </div>
           ) : null}
         </div>

@@ -7,6 +7,7 @@ type Status = "checking" | "online" | "offline" | "planned";
 const navItems = [
   { to: "/live", label: "Live" },
   { to: "/attendance", label: "Attendance" },
+  { to: "/identities", label: "Identities" },
   { to: "/enroll", label: "Enroll" },
   { to: "/labs", label: "Labs" },
 ];

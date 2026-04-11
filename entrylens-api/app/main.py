@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.providers import LocalProvider
 from app.supabase import SupabaseClient
-from app.routes import attendance, labs, system, enroll, recognize
+from app.routes import attendance, enroll, identities, labs, recognize, system
 
 
 settings = get_settings()
@@ -32,4 +32,5 @@ app.include_router(system.router)
 app.include_router(attendance.router)
 app.include_router(labs.router, prefix="/api/v1/labs")
 app.include_router(enroll.router, prefix="/api/v1")
+app.include_router(identities.router, prefix="/api/v1")
 app.include_router(recognize.router, prefix="/api/v1")

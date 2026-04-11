@@ -1,6 +1,6 @@
 # Data Model
 
-This file reflects the practical planned data structures described in the architecture document. These structures are not implemented in this repository yet.
+This file reflects the practical current data model direction in the repository after the identity CRUD schema migration.
 
 ## Core Auth And Admin Data Structures
 
@@ -18,15 +18,59 @@ This file reflects the practical planned data structures described in the archit
 
 - `id`
   UUID primary key
-- `name`
-  display name
-- `role`
-  planned values: `staff` or `visitor`
+- `display_name`
+  primary editable display name used by CRUD flows
+- `identity_type`
+  primary editable identity type such as `visitor`, `staff`, `student`, or `contractor`
+- `status`
+  current lifecycle status, default `active`
+- `notes`
+  admin/operator notes
+- `profile_sample_id`
+  the sample selected as the main ref/profile picture
 - `provider_subject_id`
   provider-owned identity reference
-- `enrolled_at`
+- `created_at`
+- `updated_at`
+
+Legacy compatibility columns still present in the database:
+
+- `name`
+- `role`
+
+New code should prefer `display_name` and `identity_type`.
+
+### `embeddings`
+
+- `id`
+- `identity_id`
+  required reference to `identities`
+- `embedding`
+  current placeholder `VECTOR(16)` from MediaPipe transform output
+- `sample_kind`
+  currently `face`
+- `image_path`
+  currently a local runtime path under `runtime-data/identity-samples/`; later can move to object storage
+- `capture_source`
+  where the sample came from
+- `capture_confidence`
+  confidence at capture/review time
+- `is_reference`
+  one preferred matching/reference sample per identity
+- `is_profile_source`
+  one sample that acts as the visual profile source per identity
 - `metadata`
-  JSONB extra fields
+  legacy compatibility JSON
+- `created_at`
+- `updated_at`
+
+The physical table name is still `embeddings`, but the domain meaning is now closer to `identity_samples`.
+
+Current runtime behavior:
+
+- enroll and add-sample flows can capture a browser frame and save it locally
+- the saved relative path is persisted in `image_path`
+- one sample can be selected as both the visual profile source and the preferred reference sample
 
 ### `attendance_logs`
 
@@ -53,19 +97,13 @@ This file reflects the practical planned data structures described in the archit
 - `reviewed_at`
 - `created_at`
 
-### `embeddings_mirror`
-
-- `identity_id`
-- `embedding`
-  planned `VECTOR(128)`
-- `created_at`
-
 ## Ambiguous Or Inconsistent Naming
 
 - `provider_subject_id` is the current preferred name.
 - Older provider-specific naming like `compreface_subject_id` is explicitly deprecated in the architecture doc.
 - The design mixes "identity", "subject", and "PersonId" depending on layer:
   use `identity` for local DB records and `provider_subject_id` for external provider references.
+- The database still uses `embeddings` as the physical table name, but the product/domain meaning is now closer to `identity_samples`.
 
 ## Working Rules Before Changing Queries, Writes, Or Contracts
 

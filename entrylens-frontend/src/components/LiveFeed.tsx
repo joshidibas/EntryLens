@@ -5,7 +5,15 @@ const placeholderEvents = [
   { id: "evt-002", label: "Current live mode is browser-side face detection", meta: "This gives us real camera feedback before backend attendance events are wired." },
 ];
 
-export default function LiveFeed({ detection }: { detection: DetectionSnapshot | null }) {
+export default function LiveFeed({
+  detection,
+  identifyResult,
+  isIdentifying,
+}: {
+  detection: DetectionSnapshot | null;
+  identifyResult: { name: string; similarity: number } | null;
+  isIdentifying: boolean;
+}) {
   const detectedFaces = detection?.detectedFaces ?? 0;
   const sampleLandmarks = detection?.sampleLandmarks ?? [];
 
@@ -16,13 +24,40 @@ export default function LiveFeed({ detection }: { detection: DetectionSnapshot |
           <p className="eyebrow">Feed</p>
           <h3>Recent Activity</h3>
         </div>
-        <span className="panel-tag">{detection?.hasFace ? "Face visible" : "Watching feed"}</span>
+        <span className="panel-tag">
+          {isIdentifying
+            ? "Identifying"
+            : identifyResult
+              ? "Match found"
+              : detection?.hasFace
+                ? "Face visible"
+                : "Watching feed"}
+        </span>
       </div>
 
       <div className="progress-list">
         <article className={`progress-item ${detection?.hasFace ? "success" : "running"}`}>
           <strong>Live detector</strong>
           <span>{detection ? `MediaPipe is reading the camera feed and sees ${detectedFaces} face(s).` : "Start the camera to begin live analysis."}</span>
+        </article>
+        <article className={`progress-item ${isIdentifying || identifyResult ? "success" : ""}`}>
+          <strong>Recognition</strong>
+          <span>
+            {isIdentifying
+              ? (
+                <>
+                  <span className="inline-activity">
+                    <span className="inline-activity-spinner" aria-hidden="true" />
+                    Identifying
+                  </span>
+                  {" "}
+                  EntryLens is matching the current face against enrolled profiles.
+                </>
+              )
+              : identifyResult
+                ? `Recognized ${identifyResult.name} with ${(identifyResult.similarity * 100).toFixed(1)}% confidence.`
+                : "Recognition is idle until a face is visible and ready for a lookup."}
+          </span>
         </article>
         <article className="progress-item">
           <strong>Frame summary</strong>

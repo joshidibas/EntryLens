@@ -1,6 +1,10 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 const API_KEY = import.meta.env.VITE_API_KEY ?? "";
 
+export function buildApiUrl(path: string): string {
+  return `${API_BASE_URL}${path}`;
+}
+
 export async function apiFetch<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers ?? {});
   if (API_KEY) {
@@ -11,7 +15,7 @@ export async function apiFetch<T = unknown>(path: string, options: RequestInit =
     headers.set("Content-Type", "application/json");
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(buildApiUrl(path), {
     ...options,
     headers,
   });
@@ -34,7 +38,7 @@ export async function apiFetchBlob(path: string, options: RequestInit = {}): Pro
     headers.set("X-API-Key", API_KEY);
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(buildApiUrl(path), {
     ...options,
     headers,
   });
