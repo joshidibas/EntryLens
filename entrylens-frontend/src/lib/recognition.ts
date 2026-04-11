@@ -22,6 +22,10 @@ export function getEmbeddingDistance(a: number[] | undefined, b: number[] | unde
   return Math.sqrt(sum / a.length);
 }
 
-export function hasMeaningfulEmbeddingChange(a: number[] | undefined, b: number[] | undefined): boolean {
-  return getEmbeddingDistance(a, b) > EMBEDDING_DELTA_THRESHOLD;
+export function hasMeaningfulEmbeddingChange(
+  a: number[] | undefined,
+  b: number[] | undefined,
+  threshold = EMBEDDING_DELTA_THRESHOLD,
+): boolean {
+  return getEmbeddingDistance(a, b) > threshold;
 }

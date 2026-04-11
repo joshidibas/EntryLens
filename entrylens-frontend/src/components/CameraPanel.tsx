@@ -5,6 +5,7 @@ import type { DetectionSnapshot } from "../types";
 
 const MIN_RECOGNITION_INDICATOR_MS = 1200;
 const UNMATCHED_RETRY_MS = 800;
+const RECOGNITION_RESET_THRESHOLD = 0.6;
 
 function drawOverlay(
   canvas: HTMLCanvasElement | null,
@@ -121,7 +122,11 @@ export default function CameraPanel({
     if (
       latestSnapshot?.hasFace &&
       recognitionLockedRef.current &&
-      hasMeaningfulEmbeddingChange(latestSnapshot.embedding, lockedEmbeddingRef.current ?? undefined)
+      hasMeaningfulEmbeddingChange(
+        latestSnapshot.embedding,
+        lockedEmbeddingRef.current ?? undefined,
+        RECOGNITION_RESET_THRESHOLD,
+      )
     ) {
       recognitionLockedRef.current = false;
       lockedEmbeddingRef.current = null;
@@ -164,11 +169,10 @@ export default function CameraPanel({
     setLocalRecognizing(true);
 
     void Promise.resolve(onRecognize(snapshot.embedding!))
-      .then((matched) => {
-        if (matched) {
-          recognitionLockedRef.current = true;
-          lockedEmbeddingRef.current = snapshot.embedding ?? null;
-        }
+      .then(() => {
+        // Settle recognition for the current face until the person meaningfully changes or leaves frame.
+        recognitionLockedRef.current = true;
+        lockedEmbeddingRef.current = snapshot.embedding ?? null;
       })
       .catch(() => undefined)
       .finally(() => {

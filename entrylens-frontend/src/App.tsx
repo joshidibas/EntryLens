@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
 import AttendancePage from "./pages/AttendancePage";
+import DetectionLogsPage from "./pages/DetectionLogsPage";
 import IdentityAddDataPage from "./pages/IdentityAddDataPage";
 import IdentitiesPage from "./pages/IdentitiesPage";
 import LabsPage from "./pages/LabsPage";
@@ -14,6 +15,8 @@ export default function App() {
         <Route index element={<Navigate to="/live" replace />} />
         <Route path="/live" element={<LivePage />} />
         <Route path="/attendance" element={<AttendancePage />} />
+        <Route path="/detection-logs" element={<DetectionLogsPage />} />
+        <Route path="/detection-logs/:detectionLogId" element={<DetectionLogsPage />} />
         <Route path="/identities" element={<IdentitiesPage />} />
         <Route path="/identities/:identityId/add-data" element={<IdentityAddDataPage />} />
         <Route path="/identities/:identityId" element={<IdentitiesPage />} />

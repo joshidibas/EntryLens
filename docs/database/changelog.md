@@ -51,6 +51,27 @@ $$;
 
 ---
 
+## 2026-04-11 - v0.2.0
+
+### Added
+
+**Identity review and detection-log schema expansion:**
+
+- added `review_source` and `merged_into_identity_id` to `public.identities`
+- added new `public.detection_logs` table for Live-feed-only detection logging
+- added indexes for review and detection-log lookup patterns
+- added `updated_at` trigger handling for `public.detection_logs`
+
+**Purpose:** Supports Live-feed detection logging, auto-tagging at high confidence, placeholder unknown identities, and later operator merge/review flows.
+
+**Notes:**
+
+- `detection_logs` is separate from attendance
+- unknown detections are expected to create placeholder identities for later merge or rename
+- duplicate suppression is intended to be enforced by backend logic, not only schema
+
+---
+
 ## Future Changes (Planned)
 
 ### v0.2.0 - Attendance Logging

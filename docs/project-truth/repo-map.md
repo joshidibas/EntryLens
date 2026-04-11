@@ -27,14 +27,18 @@
   FastAPI app bootstrap with CORS and route registration.
 - [`entrylens-api/app/routes/identities.py`](/d:/Testproject2/VisitorsTrackers/entrylens-api/app/routes/identities.py)
   Identity CRUD, sample-management routes, and local sample-image serving endpoint.
+- [`entrylens-api/app/routes/detection_logs.py`](/d:/Testproject2/VisitorsTrackers/entrylens-api/app/routes/detection_logs.py)
+  Live-feed detection-log routes for review, merge, and sample-promotion workflows.
 - [`entrylens-api/app/sample_images.py`](/d:/Testproject2/VisitorsTrackers/entrylens-api/app/sample_images.py)
-  Local runtime storage helper for captured identity/sample images.
+  Local runtime storage helper for captured identity/sample images and detection-log review frames.
 - [`entrylens-frontend/src/App.tsx`](/d:/Testproject2/VisitorsTrackers/entrylens-frontend/src/App.tsx)
   Frontend router shell for Live, Attendance, and Enroll pages.
 - [`entrylens-frontend/src/pages/IdentitiesPage.tsx`](/d:/Testproject2/VisitorsTrackers/entrylens-frontend/src/pages/IdentitiesPage.tsx)
   Identity directory and detail UI with CRUD, profile preview, and sample management.
 - [`entrylens-frontend/src/pages/IdentityAddDataPage.tsx`](/d:/Testproject2/VisitorsTrackers/entrylens-frontend/src/pages/IdentityAddDataPage.tsx)
   Identity-specific live camera workspace for recognition checks and adding more samples from the feed.
+- [`entrylens-frontend/src/pages/DetectionLogsPage.tsx`](/d:/Testproject2/VisitorsTrackers/entrylens-frontend/src/pages/DetectionLogsPage.tsx)
+  Detection-log list and detail review UI for renaming unknowns, merging to existing identities, and promoting saved frames into samples.
 - [`entrylens-frontend/src/pages/LabsPage.tsx`](/d:/Testproject2/VisitorsTrackers/entrylens-frontend/src/pages/LabsPage.tsx)
   In-app unified vision lab centered on MediaPipe live detection and a planned local-recognition path.
 - [`entrylens-frontend/src/hooks/useRecognitionSession.ts`](/d:/Testproject2/VisitorsTrackers/entrylens-frontend/src/hooks/useRecognitionSession.ts)
@@ -82,6 +86,8 @@ There is now a minimal executable runtime in the repository:
 9. The app can store local sample images in `runtime-data/identity-samples/` and show the current profile picture in the identities UI.
 10. Live recognition state is shared across Live, Labs, and identity add-data surfaces through one frontend helper hook.
 11. Recognition labels now reset and re-identify when the visible person changes, instead of waiting for the frame to become empty.
+12. Live feed now writes detection logs, with backend duplicate suppression for repeat recognized or unknown faces.
+13. Detection-log review can rename placeholders, merge into existing identities, and promote captured frames into the embedding/sample store.
 
 Still planned from the architecture document:
 

@@ -3,6 +3,8 @@ import { recognize, recognizeCandidates, type CandidateMatch } from "../api/reco
 import { hasMeaningfulEmbeddingChange } from "../lib/recognition";
 import type { DetectionSnapshot } from "../types";
 
+const RECOGNITION_RESET_THRESHOLD = 0.6;
+
 export interface RecognitionResultState {
   matched: boolean;
   identityId: string | null;
@@ -52,7 +54,11 @@ export function useRecognitionSession(options: UseRecognitionSessionOptions = {}
     if (
       previousDetection?.hasFace &&
       identifyResult &&
-      hasMeaningfulEmbeddingChange(previousDetection.embedding, snapshot.embedding)
+      hasMeaningfulEmbeddingChange(
+        previousDetection.embedding,
+        snapshot.embedding,
+        RECOGNITION_RESET_THRESHOLD,
+      )
     ) {
       setIdentifyResult(null);
       setCandidateMatches([]);

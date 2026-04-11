@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-04-11
+
+- Expanded the identity model and local sample-image flow to support richer CRUD, profile preview, and identity-specific add-data workflows.
+- Added a dedicated identity add-data page for live verification and adding more samples from the camera feed.
+- Refactored frontend recognition state into a shared helper hook used by Live, Labs, and identity add-data pages.
+- Fixed stale recognition labels so a different person entering frame clears the previous identity and triggers a fresh recognition pass.
+- Applied the database-side schema for `detection_logs` and placeholder unknown-identity review flow as the next implementation baseline.
+- Implemented `/api/v1/detection-logs` plus merge and promote actions for Live-feed-only review records.
+- Added frontend detection-log list/detail pages and wired `/live` to create logs without affecting Labs or identity add-data flows.
+- Added placeholder unknown-identity review flow so operators can rename the placeholder, merge into an existing identity, or promote the stored frame into embeddings.
+
 ## 2026-04-10
 
 - Added initial `docs/` context system from `llm-context-setup-prompt.md`.

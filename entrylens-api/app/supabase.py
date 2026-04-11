@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from typing import Any, Optional
 
 from supabase import Client, create_client
@@ -14,6 +15,8 @@ def _identity_payload(identity: dict[str, Any]) -> dict[str, Any]:
         "identity_type": identity.get("identity_type") or identity.get("role") or "visitor",
         "status": identity.get("status") or "active",
         "notes": identity.get("notes"),
+        "review_source": identity.get("review_source"),
+        "merged_into_identity_id": identity.get("merged_into_identity_id"),
     }
 
 
@@ -135,6 +138,8 @@ async def update_identity(
     identity_type: str,
     status: str,
     notes: str | None,
+    review_source: str | None = None,
+    merged_into_identity_id: str | None = None,
 ) -> Optional[dict[str, Any]]:
     """Update a single identity using the migrated CRUD columns."""
     client = SupabaseClient.get_client()
@@ -150,6 +155,10 @@ async def update_identity(
             "name": display_name,
             "role": identity_type,
         }
+        if review_source is not None:
+            payload["review_source"] = review_source
+        if merged_into_identity_id is not None:
+            payload["merged_into_identity_id"] = merged_into_identity_id
         response = client.table("identities").update(payload).eq("id", identity_id).execute()
         return _identity_payload(response.data[0]) if response.data else None
     except Exception as e:
@@ -312,6 +321,8 @@ async def create_identity(
     status: str = "active",
     notes: str | None = None,
     provider_subject_id: Optional[str] = None,
+    review_source: str | None = None,
+    merged_into_identity_id: str | None = None,
 ) -> Optional[dict[str, Any]]:
     """Create a new identity in Supabase."""
     client = SupabaseClient.get_client()
@@ -329,6 +340,10 @@ async def create_identity(
         }
         if provider_subject_id:
             data["provider_subject_id"] = provider_subject_id
+        if review_source is not None:
+            data["review_source"] = review_source
+        if merged_into_identity_id is not None:
+            data["merged_into_identity_id"] = merged_into_identity_id
 
         response = client.table("identities").insert(data).execute()
         return _identity_payload(response.data[0]) if response.data else None
@@ -373,6 +388,46 @@ async def add_embedding_to_identity(
         return False
 
 
+async def create_embedding_record(
+    identity_id: str,
+    embedding: list[float],
+    metadata: Optional[dict[str, Any]] = None,
+    *,
+    sample_kind: str = "face",
+    image_path: str | None = None,
+    capture_source: str | None = None,
+    capture_confidence: float | None = None,
+    is_reference: bool = False,
+    is_profile_source: bool = False,
+) -> Optional[dict[str, Any]]:
+    """Create and return a single embedding/sample row."""
+    identity = await get_identity_by_id(identity_id)
+    if not identity:
+        return None
+
+    client = SupabaseClient.get_client()
+    if not client:
+        return None
+
+    try:
+        payload: dict[str, Any] = {
+            "identity_id": identity_id,
+            "embedding": embedding,
+            "sample_kind": sample_kind,
+            "image_path": image_path,
+            "capture_source": capture_source,
+            "capture_confidence": capture_confidence,
+            "is_reference": is_reference,
+            "is_profile_source": is_profile_source,
+            "metadata": metadata or {},
+        }
+        response = client.table("embeddings").insert(payload).execute()
+        return _sample_payload(response.data[0]) if response.data else None
+    except Exception as e:
+        print(f"Failed to create embedding record: {e}")
+        return None
+
+
 async def delete_identity(identity_id: str) -> bool:
     """Delete identity from Supabase."""
     client = SupabaseClient.get_client()
@@ -385,3 +440,190 @@ async def delete_identity(identity_id: str) -> bool:
     except Exception as e:
         print(f"Failed to delete identity: {e}")
         return False
+
+
+def get_embedding_signature(embedding: list[float], precision: int = 3, prefix_length: int = 8) -> str:
+    return "|".join(f"{value:.{precision}f}" for value in embedding[:prefix_length])
+
+
+def _detection_log_payload(item: dict[str, Any]) -> dict[str, Any]:
+    return {
+        **item,
+        "auto_tagged": bool(item.get("auto_tagged")),
+        "embedding_present": item.get("embedding") is not None,
+    }
+
+
+async def create_unknown_identity_for_detection() -> Optional[dict[str, Any]]:
+    label = f"Unknown {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')}"
+    return await create_identity(
+        display_name=label,
+        identity_type="unknown",
+        status="pending_review",
+        notes="Created automatically from live detection.",
+        review_source="live-detection",
+    )
+
+
+async def find_recent_duplicate_detection_log(
+    *,
+    source: str,
+    current_identity_id: str | None = None,
+    embedding_signature: str | None = None,
+    window_seconds: int = 15,
+) -> Optional[dict[str, Any]]:
+    client = SupabaseClient.get_client()
+    if not client:
+        return None
+
+    try:
+        since = (datetime.now(UTC) - timedelta(seconds=window_seconds)).isoformat()
+        query = client.table("detection_logs").select("*").eq("source", source).gte("detected_at", since)
+        if current_identity_id:
+            query = query.eq("current_identity_id", current_identity_id)
+        elif embedding_signature:
+            query = query.eq("embedding_signature", embedding_signature).eq("auto_tagged", False)
+        else:
+            return None
+        response = query.order("detected_at", desc=True).limit(1).execute()
+        return _detection_log_payload(response.data[0]) if response.data else None
+    except Exception as e:
+        print(f"Failed to look up duplicate detection log: {e}")
+        return None
+
+
+async def create_detection_log(
+    *,
+    source: str,
+    camera_id: str | None,
+    image_path: str | None,
+    embedding: list[float],
+    auto_similarity: float | None,
+    auto_identity_id: str | None,
+    auto_display_name: str | None,
+    current_identity_id: str,
+    review_status: str,
+) -> Optional[dict[str, Any]]:
+    client = SupabaseClient.get_client()
+    if not client:
+        return None
+
+    try:
+        payload = {
+            "source": source,
+            "camera_id": camera_id,
+            "image_path": image_path,
+            "embedding": embedding,
+            "embedding_signature": get_embedding_signature(embedding),
+            "auto_similarity": auto_similarity,
+            "auto_identity_id": auto_identity_id,
+            "auto_display_name": auto_display_name,
+            "auto_tagged": bool(auto_identity_id and auto_similarity is not None and auto_similarity >= 0.95),
+            "current_identity_id": current_identity_id,
+            "review_status": review_status,
+        }
+        response = client.table("detection_logs").insert(payload).execute()
+        return _detection_log_payload(response.data[0]) if response.data else None
+    except Exception as e:
+        print(f"Failed to create detection log: {e}")
+        return None
+
+
+async def list_detection_logs(limit: int = 100) -> list[dict[str, Any]]:
+    client = SupabaseClient.get_client()
+    if not client:
+        return []
+
+    try:
+        response = client.table("detection_logs").select("*").order("detected_at", desc=True).limit(limit).execute()
+        return [_detection_log_payload(item) for item in (response.data or [])]
+    except Exception as e:
+        print(f"Failed to list detection logs: {e}")
+        return []
+
+
+async def get_detection_log_by_id(detection_log_id: str) -> Optional[dict[str, Any]]:
+    client = SupabaseClient.get_client()
+    if not client:
+        return None
+
+    try:
+        response = client.table("detection_logs").select("*").eq("id", detection_log_id).execute()
+        return _detection_log_payload(response.data[0]) if response.data else None
+    except Exception as e:
+        print(f"Failed to get detection log: {e}")
+        return None
+
+
+async def update_detection_log(
+    detection_log_id: str,
+    *,
+    image_path: str | None = None,
+    review_status: str | None = None,
+    review_notes: str | None = None,
+    current_identity_id: str | None = None,
+    promoted_embedding_id: str | None = None,
+    promoted_at: str | None = None,
+    reviewed_at: str | None = None,
+) -> Optional[dict[str, Any]]:
+    client = SupabaseClient.get_client()
+    if not client:
+        return None
+
+    updates: dict[str, Any] = {}
+    if image_path is not None:
+        updates["image_path"] = image_path
+    if review_status is not None:
+        updates["review_status"] = review_status
+    if review_notes is not None:
+        updates["review_notes"] = review_notes
+    if current_identity_id is not None:
+        updates["current_identity_id"] = current_identity_id
+    if promoted_embedding_id is not None:
+        updates["promoted_embedding_id"] = promoted_embedding_id
+    if promoted_at is not None:
+        updates["promoted_at"] = promoted_at
+    if reviewed_at is not None:
+        updates["reviewed_at"] = reviewed_at
+    if not updates:
+        return await get_detection_log_by_id(detection_log_id)
+
+    try:
+        response = client.table("detection_logs").update(updates).eq("id", detection_log_id).execute()
+        return _detection_log_payload(response.data[0]) if response.data else None
+    except Exception as e:
+        print(f"Failed to update detection log: {e}")
+        return None
+
+
+async def move_detection_log_identity_links(from_identity_id: str, to_identity_id: str) -> bool:
+    client = SupabaseClient.get_client()
+    if not client:
+        return False
+
+    try:
+        client.table("detection_logs").update({"current_identity_id": to_identity_id}).eq("current_identity_id", from_identity_id).execute()
+        client.table("embeddings").update({"identity_id": to_identity_id}).eq("identity_id", from_identity_id).execute()
+        return True
+    except Exception as e:
+        print(f"Failed to move identity links from detection log merge: {e}")
+        return False
+
+
+async def reassign_detection_log_identity(detection_log_id: str, target_identity_id: str) -> Optional[dict[str, Any]]:
+    client = SupabaseClient.get_client()
+    if not client:
+        return None
+
+    try:
+        response = client.table("detection_logs").update(
+            {
+                "current_identity_id": target_identity_id,
+                "review_status": "resolved",
+                "reviewed_at": datetime.now(UTC).isoformat(),
+            }
+        ).eq("id", detection_log_id).execute()
+        return _detection_log_payload(response.data[0]) if response.data else None
+    except Exception as e:
+        print(f"Failed to reassign detection log identity: {e}")
+        return None

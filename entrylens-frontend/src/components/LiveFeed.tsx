@@ -1,4 +1,5 @@
 import type { DetectionSnapshot } from "../types";
+import type { DetectionLogDetail } from "../api/detectionLogs";
 
 const placeholderEvents = [
   { id: "evt-001", label: "Recognition event stream is still pending", meta: "WebSocket work can layer on top of the live detector later." },
@@ -9,10 +10,14 @@ export default function LiveFeed({
   detection,
   identifyResult,
   isIdentifying,
+  recentLog,
+  logError,
 }: {
   detection: DetectionSnapshot | null;
   identifyResult: { name: string; similarity: number } | null;
   isIdentifying: boolean;
+  recentLog: DetectionLogDetail | null;
+  logError: string;
 }) {
   const detectedFaces = detection?.detectedFaces ?? 0;
   const sampleLandmarks = detection?.sampleLandmarks ?? [];
@@ -57,6 +62,16 @@ export default function LiveFeed({
               : identifyResult
                 ? `Recognized ${identifyResult.name} with ${(identifyResult.similarity * 100).toFixed(1)}% confidence.`
                 : "Recognition is idle until a face is visible and ready for a lookup."}
+          </span>
+        </article>
+        <article className={`progress-item ${logError ? "error" : recentLog ? "success" : ""}`}>
+          <strong>Detection logging</strong>
+          <span>
+            {logError
+              ? logError
+              : recentLog
+                ? `Latest log is ${recentLog.review_status} for ${recentLog.current_identity?.display_name ?? "Unknown"}${recentLog.auto_similarity != null ? ` at ${(recentLog.auto_similarity * 100).toFixed(1)}% similarity.` : "."}`
+                : "Live feed will save a review log after each completed recognition pass."}
           </span>
         </article>
         <article className="progress-item">
