@@ -1,0 +1,52 @@
+import type { DetectionSnapshot } from "../types";
+
+const placeholderEvents = [
+  { id: "evt-001", label: "Recognition event stream is still pending", meta: "WebSocket work can layer on top of the live detector later." },
+  { id: "evt-002", label: "Current live mode is browser-side face detection", meta: "This gives us real camera feedback before backend attendance events are wired." },
+];
+
+export default function LiveFeed({ detection }: { detection: DetectionSnapshot | null }) {
+  const detectedFaces = detection?.detectedFaces ?? 0;
+  const sampleLandmarks = detection?.sampleLandmarks ?? [];
+
+  return (
+    <section className="panel">
+      <div className="panel-header">
+        <div>
+          <p className="eyebrow">Feed</p>
+          <h3>Recent Activity</h3>
+        </div>
+        <span className="panel-tag">{detection?.hasFace ? "Face visible" : "Watching feed"}</span>
+      </div>
+
+      <div className="progress-list">
+        <article className={`progress-item ${detection?.hasFace ? "success" : "running"}`}>
+          <strong>Live detector</strong>
+          <span>{detection ? `MediaPipe is reading the camera feed and sees ${detectedFaces} face(s).` : "Start the camera to begin live analysis."}</span>
+        </article>
+        <article className="progress-item">
+          <strong>Frame summary</strong>
+          <span>{detection ? `${detection.frameWidth} x ${detection.frameHeight} video frame, ${detection.firstFaceLandmarkCount} landmarks on the first face.` : "No frame metrics yet."}</span>
+        </article>
+      </div>
+
+      <div className="feed-list">
+        {placeholderEvents.map((event) => (
+          <article className="feed-item" key={event.id}>
+            <strong>{event.label}</strong>
+            <span>{event.meta}</span>
+          </article>
+        ))}
+      </div>
+
+      <div className="lab-summary">
+        <strong>Sample landmarks</strong>
+        {sampleLandmarks.length > 0 ? (
+          <pre className="code-panel">{JSON.stringify(sampleLandmarks, null, 2)}</pre>
+        ) : (
+          <p>No landmark sample yet. Put a face in frame after starting the camera.</p>
+        )}
+      </div>
+    </section>
+  );
+}
