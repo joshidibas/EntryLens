@@ -140,3 +140,22 @@ Update `LabsPage.tsx`:
 
 - [ ] Update `docs/tasks/todo.md` - mark this as active after Sequence 1
 - [ ] Update `docs/project-truth/architecture-truth.md` - add /api/v1/recognize route
+
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+- Related file notes:
+  - [[graphify-out/wiki/entrylens-api/app/routes/recognize.py|entrylens-api/app/routes/recognize.py]]
+  - [[graphify-out/wiki/entrylens-api/app/schemas/recognize.py|entrylens-api/app/schemas/recognize.py]]
+  - [[graphify-out/wiki/entrylens-frontend/src/api/recognize.ts|entrylens-frontend/src/api/recognize.ts]]
+  - [[graphify-out/wiki/entrylens-frontend/src/hooks/useMediaPipeLab.ts|entrylens-frontend/src/hooks/useMediaPipeLab.ts]]
+  - [[graphify-out/wiki/entrylens-frontend/src/pages/LabsPage.tsx|entrylens-frontend/src/pages/LabsPage.tsx]]
+- Related communities:
+  - [[graphify-out/wiki/communities/Community 2|Community 2]]
+  - [[graphify-out/wiki/communities/Community 8|Community 8]]
+  - [[graphify-out/wiki/communities/Community 9|Community 9]]
+<!-- graphify-links:end -->

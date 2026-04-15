@@ -78,3 +78,11 @@ This shorter path is preferred because it gives agents the current repo state, t
 - Do not claim paths like `sentinel-api/` or `sentinel-frontend/` exist unless they are actually added to the repo.
 - Update `docs/project-truth/*` when repo reality changes.
 
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+<!-- graphify-links:end -->

@@ -159,3 +159,12 @@ Current runtime behavior:
 - Keep detection-log writes scoped to Live feed unless the product rules explicitly change.
 - If the code later diverges from this planned schema, update this file to reflect runtime truth.
 - Treat provider response shapes as contracts that should live behind the `FaceProvider` abstraction, not inside route handlers.
+
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+<!-- graphify-links:end -->

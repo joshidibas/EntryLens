@@ -435,3 +435,12 @@ After completing all phases, run through this checklist and report the result of
 5. **LocalFaceProvider is a singleton** — instantiate once at module level, never per request
 6. **CONFIDENCE_THRESHOLD = 0.45** — false negatives → lower to 0.40 | false positives → raise to 0.55
 7. **When unsure about a path or approach** — make a decision, implement it, and tell the developer what you chose and why
+
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+<!-- graphify-links:end -->

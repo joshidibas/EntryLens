@@ -342,3 +342,24 @@ Docs:
 - [ ] update `docs/project-truth/runtime-flows.md` when identity CRUD/sample/profile flows are implemented
 - [ ] update `docs/project-truth/changelog.md` after implementation
 - [ ] archive this plan to `docs/Planning/old/` when complete
+
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+- Related file notes:
+  - [[graphify-out/wiki/entrylens-api/app/routes/identities.py|entrylens-api/app/routes/identities.py]]
+  - [[graphify-out/wiki/entrylens-api/app/schemas/identity.py|entrylens-api/app/schemas/identity.py]]
+  - [[graphify-out/wiki/entrylens-api/app/supabase.py|entrylens-api/app/supabase.py]]
+  - [[graphify-out/wiki/entrylens-frontend/src/App.tsx|entrylens-frontend/src/App.tsx]]
+  - [[graphify-out/wiki/entrylens-frontend/src/api/identities.ts|entrylens-frontend/src/api/identities.ts]]
+  - [[graphify-out/wiki/entrylens-frontend/src/components/Layout.tsx|entrylens-frontend/src/components/Layout.tsx]]
+- Related communities:
+  - [[graphify-out/wiki/communities/Community 0|Community 0]]
+  - [[graphify-out/wiki/communities/Community 1|Community 1]]
+  - [[graphify-out/wiki/communities/Community 30|Community 30]]
+  - [[graphify-out/wiki/communities/Community 34|Community 34]]
+<!-- graphify-links:end -->

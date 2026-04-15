@@ -33,3 +33,12 @@ Live feed now creates `detection_logs`, auto-tags at high confidence, creates pl
 - MediaPipe is still the primary active engine for detection and placeholder matching.
 - Local recognition via Labs and Live works, and only `/live` now writes `detection_logs`.
 - `detection_logs` is separate from attendance and supports placeholder unknown review plus later identity merge/promotion.
+
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+<!-- graphify-links:end -->

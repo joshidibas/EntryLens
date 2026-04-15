@@ -720,3 +720,32 @@ This bootstrap plan crosses sprint boundaries because it is organized around the
 - Update [`docs/project-truth/repo-map.md`](/d:/Testproject2/VisitorsTrackers/docs/project-truth/repo-map.md) once `entrylens-api/` and `entrylens-frontend/` exist.
 - Update [`docs/project-truth/architecture-truth.md`](/d:/Testproject2/VisitorsTrackers/docs/project-truth/architecture-truth.md) once runtime code exists.
 - Append meaningful milestones to [`docs/project-truth/changelog.md`](/d:/Testproject2/VisitorsTrackers/docs/project-truth/changelog.md).
+
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+- Related file notes:
+  - [[graphify-out/wiki/entrylens-api/app/auth.py|entrylens-api/app/auth.py]]
+  - [[graphify-out/wiki/entrylens-api/app/config.py|entrylens-api/app/config.py]]
+  - [[graphify-out/wiki/entrylens-api/app/db.py|entrylens-api/app/db.py]]
+  - [[graphify-out/wiki/entrylens-api/app/main.py|entrylens-api/app/main.py]]
+  - [[graphify-out/wiki/entrylens-api/app/providers/__init__.py|entrylens-api/app/providers/__init__.py]]
+  - [[graphify-out/wiki/entrylens-api/app/providers/base.py|entrylens-api/app/providers/base.py]]
+  - [[graphify-out/wiki/entrylens-api/app/providers/schemas.py|entrylens-api/app/providers/schemas.py]]
+  - [[graphify-out/wiki/entrylens-api/app/routes/attendance.py|entrylens-api/app/routes/attendance.py]]
+  - [[graphify-out/wiki/entrylens-api/app/routes/enroll.py|entrylens-api/app/routes/enroll.py]]
+  - [[graphify-out/wiki/entrylens-api/app/routes/identities.py|entrylens-api/app/routes/identities.py]]
+  - [[graphify-out/wiki/entrylens-api/app/routes/recognize.py|entrylens-api/app/routes/recognize.py]]
+  - [[graphify-out/wiki/entrylens-api/app/schemas/enroll.py|entrylens-api/app/schemas/enroll.py]]
+- Related communities:
+  - [[graphify-out/wiki/communities/Community 0|Community 0]]
+  - [[graphify-out/wiki/communities/Community 2|Community 2]]
+  - [[graphify-out/wiki/communities/Community 3|Community 3]]
+  - [[graphify-out/wiki/communities/Community 8|Community 8]]
+  - [[graphify-out/wiki/communities/Community 10|Community 10]]
+  - [[graphify-out/wiki/communities/Community 15|Community 15]]
+<!-- graphify-links:end -->

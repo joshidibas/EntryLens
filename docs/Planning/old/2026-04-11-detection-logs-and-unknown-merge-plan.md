@@ -345,3 +345,26 @@ After implementation becomes real, update:
 - `docs/project-truth/architecture-truth.md`
 - `docs/project-truth/repo-map.md`
 - `docs/project-truth/changelog.md`
+
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+- Related file notes:
+  - [[graphify-out/wiki/entrylens-api/app/main.py|entrylens-api/app/main.py]]
+  - [[graphify-out/wiki/entrylens-api/app/routes/identities.py|entrylens-api/app/routes/identities.py]]
+  - [[graphify-out/wiki/entrylens-api/app/supabase.py|entrylens-api/app/supabase.py]]
+  - [[graphify-out/wiki/entrylens-frontend/src/App.tsx|entrylens-frontend/src/App.tsx]]
+  - [[graphify-out/wiki/entrylens-frontend/src/components/CameraPanel.tsx|entrylens-frontend/src/components/CameraPanel.tsx]]
+  - [[graphify-out/wiki/entrylens-frontend/src/hooks/useRecognitionSession.ts|entrylens-frontend/src/hooks/useRecognitionSession.ts]]
+  - [[graphify-out/wiki/entrylens-frontend/src/pages/LivePage.tsx|entrylens-frontend/src/pages/LivePage.tsx]]
+- Related communities:
+  - [[graphify-out/wiki/communities/Community 0|Community 0]]
+  - [[graphify-out/wiki/communities/Community 3|Community 3]]
+  - [[graphify-out/wiki/communities/Community 11|Community 11]]
+  - [[graphify-out/wiki/communities/Community 13|Community 13]]
+  - [[graphify-out/wiki/communities/Community 30|Community 30]]
+<!-- graphify-links:end -->

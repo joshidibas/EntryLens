@@ -104,3 +104,29 @@ Update LabsPage.tsx:
 
 - [ ] Update `docs/tasks/todo.md` - mark this as active
 - [ ] Update `docs/project-truth/architecture-truth.md` - add /api/v1/enroll route
+
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+- Related file notes:
+  - [[graphify-out/wiki/entrylens-api/app/main.py|entrylens-api/app/main.py]]
+  - [[graphify-out/wiki/entrylens-api/app/providers/local_provider.py|entrylens-api/app/providers/local_provider.py]]
+  - [[graphify-out/wiki/entrylens-api/app/routes/enroll.py|entrylens-api/app/routes/enroll.py]]
+  - [[graphify-out/wiki/entrylens-api/app/schemas/enroll.py|entrylens-api/app/schemas/enroll.py]]
+  - [[graphify-out/wiki/entrylens-api/app/supabase.py|entrylens-api/app/supabase.py]]
+  - [[graphify-out/wiki/entrylens-frontend/src/api/enroll.ts|entrylens-frontend/src/api/enroll.ts]]
+  - [[graphify-out/wiki/entrylens-frontend/src/components/CameraPanel.tsx|entrylens-frontend/src/components/CameraPanel.tsx]]
+  - [[graphify-out/wiki/entrylens-frontend/src/hooks/useMediaPipeLab.ts|entrylens-frontend/src/hooks/useMediaPipeLab.ts]]
+  - [[graphify-out/wiki/entrylens-frontend/src/pages/LabsPage.tsx|entrylens-frontend/src/pages/LabsPage.tsx]]
+- Related communities:
+  - [[graphify-out/wiki/communities/Community 0|Community 0]]
+  - [[graphify-out/wiki/communities/Community 2|Community 2]]
+  - [[graphify-out/wiki/communities/Community 3|Community 3]]
+  - [[graphify-out/wiki/communities/Community 8|Community 8]]
+  - [[graphify-out/wiki/communities/Community 9|Community 9]]
+  - [[graphify-out/wiki/communities/Community 11|Community 11]]
+<!-- graphify-links:end -->

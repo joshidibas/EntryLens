@@ -341,3 +341,12 @@ If revisited later, restart with the smallest possible proof step:
 4. test with a tiny local image set before touching the main FastAPI provider
 
 Until Azure access requirements change, this plan should remain archived as a blocked option rather than an active next move.
+
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+<!-- graphify-links:end -->

@@ -45,3 +45,11 @@
 - Removed Azure from the active runtime path by switching the app to a neutral local provider stub, removing Azure env values from the active env files, and dropping the Azure playground folders from `playgrounds/`.
 - Reframed the current repo truth around MediaPipe live detect plus planned local recognition and Supabase integration instead of Azure experimentation.
 
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+<!-- graphify-links:end -->

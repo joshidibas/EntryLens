@@ -275,3 +275,12 @@ Start with the smallest useful slice:
 4. test with one known sample image before adding folder mode
 
 That keeps the experiment tight, reversible, and clearly separate from both Azure identity work and the active CompreFace recognition path.
+
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+<!-- graphify-links:end -->

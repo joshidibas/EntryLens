@@ -1147,3 +1147,11 @@ sentinel-vision/
 *Companion to: ENTRYLENS_ARCHITECTURE.md v1.1*
 *Keep both documents in the repo root. Update together.*
 
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+<!-- graphify-links:end -->

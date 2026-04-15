@@ -472,3 +472,11 @@ Do not upgrade pre-emptively. Upgrade only when the trigger is hit.
 *Updated: reflects provider-agnostic schema, revised Docker layout, and corrected implementation order.*
 *Update this document whenever an architectural decision changes. Keep it in the repo root.*
 
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+<!-- graphify-links:end -->

@@ -111,3 +111,11 @@ This subset is the default recommendation because it is enough to learn:
 - Need planning rules before starting non-trivial work:
   read [`docs/Planning/Plan.md`](/d:/Testproject2/VisitorsTrackers/docs/Planning/Plan.md)
 
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+<!-- graphify-links:end -->

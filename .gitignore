@@ -30,3 +30,11 @@ nul
 *.njsproj
 *.sln
 runtime-data/
+
+# Local editor and agent state
+.obsidian/
+.codex/
+AGENTS.md
+
+# Generated graph artifacts
+graphify-out/

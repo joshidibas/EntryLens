@@ -140,3 +140,12 @@ The legacy `name`, `role`, and `metadata` fields remain so the codebase can tran
 - `public.attendance_logs` - attendance records with timestamps
 - `public.visitors` - visitor log entries
 - `public.camera_config` - camera settings and locations
+
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+<!-- graphify-links:end -->

@@ -95,3 +95,12 @@ The user-facing goal is:
 - update `docs/project-truth/repo-map.md`
 - update `docs/project-truth/architecture-truth.md`
 - append to `docs/project-truth/changelog.md`
+
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+<!-- graphify-links:end -->

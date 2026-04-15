@@ -118,3 +118,31 @@ Still planned from the architecture document:
 - Only open the architecture sections relevant to the task.
 - Do not load the entire master plan unless the task is specifically about roadmap or backlog structure.
 
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+- Related file notes:
+  - [[graphify-out/wiki/entrylens-api/app/main.py|entrylens-api/app/main.py]]
+  - [[graphify-out/wiki/entrylens-api/app/routes/detection_logs.py|entrylens-api/app/routes/detection_logs.py]]
+  - [[graphify-out/wiki/entrylens-api/app/routes/identities.py|entrylens-api/app/routes/identities.py]]
+  - [[graphify-out/wiki/entrylens-api/app/routes/labs.py|entrylens-api/app/routes/labs.py]]
+  - [[graphify-out/wiki/entrylens-api/app/sample_images.py|entrylens-api/app/sample_images.py]]
+  - [[graphify-out/wiki/entrylens-api/app/services/labs.py|entrylens-api/app/services/labs.py]]
+  - [[graphify-out/wiki/entrylens-frontend/src/App.tsx|entrylens-frontend/src/App.tsx]]
+  - [[graphify-out/wiki/entrylens-frontend/src/hooks/useMediaPipeLab.ts|entrylens-frontend/src/hooks/useMediaPipeLab.ts]]
+  - [[graphify-out/wiki/entrylens-frontend/src/hooks/useRecognitionSession.ts|entrylens-frontend/src/hooks/useRecognitionSession.ts]]
+  - [[graphify-out/wiki/entrylens-frontend/src/pages/DetectionLogsPage.tsx|entrylens-frontend/src/pages/DetectionLogsPage.tsx]]
+  - [[graphify-out/wiki/entrylens-frontend/src/pages/IdentitiesPage.tsx|entrylens-frontend/src/pages/IdentitiesPage.tsx]]
+  - [[graphify-out/wiki/entrylens-frontend/src/pages/IdentityAddDataPage.tsx|entrylens-frontend/src/pages/IdentityAddDataPage.tsx]]
+- Related communities:
+  - [[graphify-out/wiki/communities/Community 0|Community 0]]
+  - [[graphify-out/wiki/communities/Community 1|Community 1]]
+  - [[graphify-out/wiki/communities/Community 3|Community 3]]
+  - [[graphify-out/wiki/communities/Community 5|Community 5]]
+  - [[graphify-out/wiki/communities/Community 7|Community 7]]
+  - [[graphify-out/wiki/communities/Community 8|Community 8]]
+<!-- graphify-links:end -->

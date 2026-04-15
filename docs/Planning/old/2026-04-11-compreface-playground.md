@@ -285,3 +285,12 @@ Start with the smallest useful playground slice:
 4. test with a tiny local image set before touching the main FastAPI provider
 
 That keeps the next step tight, reversible, and aligned with the provider abstraction already defined in the project docs.
+
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+<!-- graphify-links:end -->

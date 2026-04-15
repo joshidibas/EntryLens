@@ -86,3 +86,12 @@ When marking work complete or writing verification notes, always use file search
 - before marking any work "complete" in todo.md
 - before claiming files exist in verification notes
 - when updating project-truth docs with new file locations
+
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+<!-- graphify-links:end -->

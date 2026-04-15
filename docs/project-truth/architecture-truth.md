@@ -97,3 +97,15 @@ Within the design docs:
 - The master plan contains many later-story routes and services that are not implemented yet.
 - Encoding artifacts may make some sections look noisy; use meaning, not typography, as the source of truth.
 
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+- Related file notes:
+  - [[graphify-out/wiki/scripts/dev.ps1|scripts/dev.ps1]]
+- Related communities:
+  - [[graphify-out/wiki/communities/Community 36|Community 36]]
+<!-- graphify-links:end -->

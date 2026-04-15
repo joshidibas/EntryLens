@@ -77,3 +77,12 @@ Any change that affects repo structure, architecture truth, runtime flows, or da
 - the relevant file in `docs/project-truth/`
 - `docs/project-truth/changelog.md`
 - `docs/tasks/todo.md` when the task is active
+
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+<!-- graphify-links:end -->

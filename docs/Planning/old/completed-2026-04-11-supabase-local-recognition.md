@@ -98,3 +98,24 @@ The intended user-facing direction is:
 - update `docs/project-truth/repo-map.md`
 - append to `docs/project-truth/changelog.md`
 - update `docs/tasks/todo.md`
+
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+- Related file notes:
+  - [[graphify-out/wiki/entrylens-api/app/config.py|entrylens-api/app/config.py]]
+  - [[graphify-out/wiki/entrylens-api/app/main.py|entrylens-api/app/main.py]]
+  - [[graphify-out/wiki/entrylens-api/app/providers/base.py|entrylens-api/app/providers/base.py]]
+  - [[graphify-out/wiki/entrylens-api/app/providers/local_provider.py|entrylens-api/app/providers/local_provider.py]]
+  - [[graphify-out/wiki/entrylens-api/app/routes/labs.py|entrylens-api/app/routes/labs.py]]
+  - [[graphify-out/wiki/entrylens-frontend/src/pages/LabsPage.tsx|entrylens-frontend/src/pages/LabsPage.tsx]]
+- Related communities:
+  - [[graphify-out/wiki/communities/Community 3|Community 3]]
+  - [[graphify-out/wiki/communities/Community 5|Community 5]]
+  - [[graphify-out/wiki/communities/Community 8|Community 8]]
+  - [[graphify-out/wiki/communities/Community 10|Community 10]]
+<!-- graphify-links:end -->

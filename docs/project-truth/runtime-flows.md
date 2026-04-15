@@ -94,3 +94,18 @@ Verification shortcut files once code exists:
 - `sentinel-api/app/routes/export.py`
 - `sentinel-api/app/models.py`
 - `sentinel-api/alembic/versions/001_initial_schema.py`
+
+
+
+<!-- graphify-links:start -->
+## Graph Links
+
+- [[graphify-out/wiki/index|Graphify Wiki]]
+- [[graphify-out/GRAPH_REPORT|Graph Report]]
+- Related file notes:
+  - [[graphify-out/wiki/entrylens-api/app/providers/local_provider.py|entrylens-api/app/providers/local_provider.py]]
+  - [[graphify-out/wiki/entrylens-frontend/src/hooks/useMediaPipeLab.ts|entrylens-frontend/src/hooks/useMediaPipeLab.ts]]
+- Related communities:
+  - [[graphify-out/wiki/communities/Community 3|Community 3]]
+  - [[graphify-out/wiki/communities/Community 9|Community 9]]
+<!-- graphify-links:end -->
