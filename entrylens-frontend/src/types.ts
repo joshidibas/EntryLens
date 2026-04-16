@@ -4,6 +4,11 @@ export interface LabModel {
   id: string;
   label: string;
   description: string;
+  input_mode?: "browser-embedding" | "image-data";
+  enabled?: boolean;
+  status?: "ready" | "experimental" | "disabled";
+  health?: "ok" | "degraded" | "unavailable";
+  unavailable_reason?: string | null;
 }
 
 export interface LabTarget {

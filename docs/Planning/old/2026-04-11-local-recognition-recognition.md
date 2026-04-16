@@ -143,6 +143,7 @@ Update `LabsPage.tsx`:
 
 
 
+
 <!-- graphify-links:start -->
 ## Graph Links
 
@@ -155,7 +156,7 @@ Update `LabsPage.tsx`:
   - [[graphify-out/wiki/entrylens-frontend/src/hooks/useMediaPipeLab.ts|entrylens-frontend/src/hooks/useMediaPipeLab.ts]]
   - [[graphify-out/wiki/entrylens-frontend/src/pages/LabsPage.tsx|entrylens-frontend/src/pages/LabsPage.tsx]]
 - Related communities:
-  - [[graphify-out/wiki/communities/Community 2|Community 2]]
-  - [[graphify-out/wiki/communities/Community 8|Community 8]]
+  - [[graphify-out/wiki/communities/Community 3|Community 3]]
   - [[graphify-out/wiki/communities/Community 9|Community 9]]
+  - [[graphify-out/wiki/communities/Community 10|Community 10]]
 <!-- graphify-links:end -->

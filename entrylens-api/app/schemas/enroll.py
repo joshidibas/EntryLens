@@ -4,7 +4,8 @@ from pydantic import BaseModel, Field
 class EnrollRequest(BaseModel):
     name: str = Field(..., min_length=1, description="Name of the person to enroll")
     role: str = Field(default="visitor", pattern="^(staff|visitor)$")
-    embedding: list[float] = Field(..., description="Face embedding vector from MediaPipe")
+    model_id: str = Field(default="local-default", min_length=1, description="Selected Labs recognition model")
+    embedding: list[float] | None = Field(default=None, description="Optional face embedding vector")
     image_data_url: str | None = Field(default=None, description="Optional captured frame as a data URL")
 
 

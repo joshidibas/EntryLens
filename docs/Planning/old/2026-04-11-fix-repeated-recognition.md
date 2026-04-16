@@ -25,6 +25,7 @@ Implemented a debounce/throttle mechanism that:
 
 
 
+
 <!-- graphify-links:start -->
 ## Graph Links
 
@@ -34,6 +35,6 @@ Implemented a debounce/throttle mechanism that:
   - [[graphify-out/wiki/entrylens-frontend/src/components/CameraPanel.tsx|entrylens-frontend/src/components/CameraPanel.tsx]]
   - [[graphify-out/wiki/entrylens-frontend/src/pages/LabsPage.tsx|entrylens-frontend/src/pages/LabsPage.tsx]]
 - Related communities:
-  - [[graphify-out/wiki/communities/Community 8|Community 8]]
+  - [[graphify-out/wiki/communities/Community 9|Community 9]]
   - [[graphify-out/wiki/communities/Community 11|Community 11]]
 <!-- graphify-links:end -->

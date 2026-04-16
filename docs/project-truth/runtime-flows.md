@@ -1,99 +1,99 @@
 # Runtime Flows
 
-These flows are planned flows extracted from the architecture document. They are not implemented in the current repository snapshot.
+These flows summarize the current runtime behavior visible in the repository, plus a short note where roadmap behavior is still only planned.
 
 ## Login And Auth Flow
 
-- Current planned Phase 1 auth:
+- Current auth:
   API key protection on `/api/v1/*`
-- Health endpoint planned to be public:
+- Public health endpoint:
   `/health`
-- Planned Phase 2 auth shift:
+- Planned later auth shift:
   JWT-based login and session handling
 
-Verification shortcut files once code exists:
+Verification shortcut files:
 
-- `sentinel-api/app/main.py`
-- `sentinel-api/app/auth.py`
-- `sentinel-api/app/config.py`
+- `entrylens-api/app/main.py`
+- `entrylens-api/app/auth.py`
+- `entrylens-api/app/config.py`
 
 ## Authorization Or Gating Flow
 
 - Browser captures frames from the camera.
 - MediaPipe checks head pose and face stability.
-- Only valid stable face chips are posted to the API.
+- Frontend posts valid face chips or captured frames to the API for recognize or enroll flows.
 - Backend auth validates request access before recognition or enrollment work.
-- Recognition thresholds decide confirmed match, pending review, or visitor outcome.
+- Recognition thresholds decide automatic tagging versus review-oriented follow-up.
 
-Verification shortcut files once code exists:
+Verification shortcut files:
 
 - `entrylens-frontend/src/hooks/useMediaPipeLab.ts`
-- `sentinel-frontend/src/hooks/useRecognitionLoop.js`
-- `sentinel-api/app/routes/recognize.py`
-- `sentinel-api/app/services/recognition_service.py`
+- `entrylens-frontend/src/hooks/useRecognitionSession.ts`
+- `entrylens-api/app/routes/recognize.py`
+- `entrylens-api/app/providers/local_provider.py`
 
 ## Session Handling
 
-- No implemented session handling exists in this repo.
-- Planned Phase 1 uses API keys, so browser session management is minimal.
+- No user login session handling exists in this repo today.
+- Current access control uses API keys, so browser session management is minimal.
 - Planned Phase 2 introduces JWT expiry and authenticated user sessions.
 
-Verification shortcut files once code exists:
+Verification shortcut files:
 
-- `sentinel-api/app/auth.py`
-- `sentinel-api/app/routes/auth.py`
+- `entrylens-api/app/auth.py`
+- `entrylens-api/app/routes/system.py`
 
 ## Privileged Backend Action Flow
 
-Recognition flow, planned:
+Recognition flow, current:
 
 1. Browser sends base64 face chip to `POST /api/v1/recognize`.
 2. FastAPI verifies API key.
-3. Provider strategy calls `provider.identify()`.
-4. Threshold logic writes to attendance and maybe review queue.
-5. Image storage writes chip to MinIO.
-6. WebSocket pushes event to dashboard clients.
+3. The configured provider resolves an embedding and attempts identity matching.
+4. Threshold logic decides whether the result is auto-tagged or should remain a review case.
+5. Live-feed flows can also persist a detection log image locally under `runtime-data/detection-logs/`.
 
-Enrollment flow, planned:
+Enrollment flow, current:
 
 1. Operator uploads photos to `POST /api/v1/enroll`.
 2. Backend validates and decodes images.
-3. Provider strategy calls `provider.enroll()`.
-4. Identity metadata is stored in PostgreSQL.
+3. Provider strategy resolves embeddings and stores them through the Supabase client.
+4. Optional sample images are saved locally under `runtime-data/identity-samples/`.
+5. Identity metadata and sample rows are stored in Supabase/PostgreSQL.
 
-Review flow, planned:
+Detection-log review flow, current:
 
-1. Operator opens pending review queue.
-2. Confirm calls review endpoint.
-3. Backend re-enrolls additional sample through the provider.
-4. Review item and attendance log are updated.
+1. Live-feed recognition creates or updates `detection_logs`.
+2. Low-confidence or unmatched detections can point to placeholder unknown identities.
+3. Operator opens `/detection-logs` or a specific detection-log detail view.
+4. The backend can rename a placeholder identity, merge it into an existing identity, or promote the captured frame into the sample store.
 
-Verification shortcut files once code exists:
+Verification shortcut files:
 
-- `sentinel-api/app/providers/base.py`
+- `entrylens-api/app/providers/base.py`
 - `entrylens-api/app/providers/local_provider.py`
-- `sentinel-api/app/routes/enroll.py`
-- `sentinel-api/app/routes/review.py`
-- `sentinel-api/app/services/review_service.py`
-- `sentinel-api/app/services/storage_service.py`
+- `entrylens-api/app/routes/enroll.py`
+- `entrylens-api/app/routes/recognize.py`
+- `entrylens-api/app/routes/detection_logs.py`
+- `entrylens-api/app/routes/identities.py`
+- `entrylens-api/app/sample_images.py`
 
 ## Audit And Logging Flow
 
-Planned audit surfaces:
+Current audit and logging surfaces:
 
-- `attendance_logs` for recognition outcomes
-- `review_queue` for uncertain matches
-- MinIO face chip storage with TTL for image audit support
-- CSV export for external review
+- `detection_logs` for live-feed reviewable events
+- local runtime image storage for saved detection frames and identity samples
+- `attendance_logs` remains part of the broader product model
+- `review_queue` and export surfaces remain planned
 
-No implemented logging or audit code exists in the repo today.
+Verification shortcut files:
 
-Verification shortcut files once code exists:
+- `entrylens-api/app/routes/attendance.py`
+- `entrylens-api/app/routes/detection_logs.py`
+- `entrylens-api/app/sample_images.py`
+- `entrylens-api/setup_supabase.sql`
 
-- `sentinel-api/app/routes/attendance.py`
-- `sentinel-api/app/routes/export.py`
-- `sentinel-api/app/models.py`
-- `sentinel-api/alembic/versions/001_initial_schema.py`
 
 
 
@@ -103,9 +103,23 @@ Verification shortcut files once code exists:
 - [[graphify-out/wiki/index|Graphify Wiki]]
 - [[graphify-out/GRAPH_REPORT|Graph Report]]
 - Related file notes:
+  - [[graphify-out/wiki/entrylens-api/app/auth.py|entrylens-api/app/auth.py]]
+  - [[graphify-out/wiki/entrylens-api/app/config.py|entrylens-api/app/config.py]]
+  - [[graphify-out/wiki/entrylens-api/app/main.py|entrylens-api/app/main.py]]
+  - [[graphify-out/wiki/entrylens-api/app/providers/base.py|entrylens-api/app/providers/base.py]]
   - [[graphify-out/wiki/entrylens-api/app/providers/local_provider.py|entrylens-api/app/providers/local_provider.py]]
-  - [[graphify-out/wiki/entrylens-frontend/src/hooks/useMediaPipeLab.ts|entrylens-frontend/src/hooks/useMediaPipeLab.ts]]
+  - [[graphify-out/wiki/entrylens-api/app/routes/attendance.py|entrylens-api/app/routes/attendance.py]]
+  - [[graphify-out/wiki/entrylens-api/app/routes/detection_logs.py|entrylens-api/app/routes/detection_logs.py]]
+  - [[graphify-out/wiki/entrylens-api/app/routes/enroll.py|entrylens-api/app/routes/enroll.py]]
+  - [[graphify-out/wiki/entrylens-api/app/routes/identities.py|entrylens-api/app/routes/identities.py]]
+  - [[graphify-out/wiki/entrylens-api/app/routes/recognize.py|entrylens-api/app/routes/recognize.py]]
+  - [[graphify-out/wiki/entrylens-api/app/routes/system.py|entrylens-api/app/routes/system.py]]
+  - [[graphify-out/wiki/entrylens-api/app/sample_images.py|entrylens-api/app/sample_images.py]]
 - Related communities:
+  - [[graphify-out/wiki/communities/Community 0|Community 0]]
+  - [[graphify-out/wiki/communities/Community 2|Community 2]]
   - [[graphify-out/wiki/communities/Community 3|Community 3]]
+  - [[graphify-out/wiki/communities/Community 4|Community 4]]
+  - [[graphify-out/wiki/communities/Community 8|Community 8]]
   - [[graphify-out/wiki/communities/Community 9|Community 9]]
 <!-- graphify-links:end -->

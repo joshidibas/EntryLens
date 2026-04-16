@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-04-16
+
+- Archived the previously active Colab-first planning direction in favor of a backend-first model runtime transition plan.
+- Added a new active plan for running InsightFace directly in the backend and evolving the recognition stack toward a plug-and-play model registry.
+- Updated task tracking so the active architecture direction now centers on backend-owned model execution and future multi-model expansion.
+
 ## 2026-04-11
 
 - Expanded the identity model and local sample-image flow to support richer CRUD, profile preview, and identity-specific add-data workflows.
@@ -44,6 +50,7 @@
 - Migrated the active frontend surface from JSX to TS/TSX so the repo is aligned with the current build-plan direction before further feature work.
 - Removed Azure from the active runtime path by switching the app to a neutral local provider stub, removing Azure env values from the active env files, and dropping the Azure playground folders from `playgrounds/`.
 - Reframed the current repo truth around MediaPipe live detect plus planned local recognition and Supabase integration instead of Azure experimentation.
+
 
 
 

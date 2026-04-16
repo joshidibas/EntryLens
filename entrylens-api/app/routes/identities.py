@@ -14,6 +14,7 @@ from app.schemas.identity import (
     IdentitySummary,
     UpdateIdentityRequest,
 )
+from app.services.embedding_models import resolve_embedding
 from app.supabase import (
     add_embedding_to_identity,
     count_embeddings_for_identity,
@@ -173,12 +174,6 @@ async def get_identity_embeddings(identity_id: str):
 
 @router.post("/{identity_id}/embeddings", response_model=AddIdentitySampleResponse)
 async def add_identity_embedding(identity_id: str, request: AddIdentitySampleRequest):
-    if not request.embedding:
-        raise HTTPException(status_code=400, detail="No embedding provided")
-
-    if len(request.embedding) != 16:
-        raise HTTPException(status_code=400, detail="Invalid embedding format - expected 16 values")
-
     identity = await get_identity_by_id(identity_id)
     if not identity:
         raise HTTPException(status_code=404, detail="Identity not found")
@@ -190,11 +185,17 @@ async def add_identity_embedding(identity_id: str, request: AddIdentitySampleReq
         metadata["source_confidence"] = request.capture_confidence
 
     stored_image_path = request.image_path or save_sample_image(identity_id, request.image_data_url)
+    resolved_embedding = await resolve_embedding(
+        model_id=request.model_id,
+        embedding=request.embedding,
+        image_data_url=request.image_data_url,
+    )
 
     added = await add_embedding_to_identity(
         identity_id,
-        request.embedding,
+        resolved_embedding.embedding,
         metadata,
+        model_id=resolved_embedding.model_id,
         sample_kind=request.sample_kind,
         image_path=stored_image_path,
         capture_source=request.capture_source or "unknown-review",

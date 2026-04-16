@@ -1,7 +1,9 @@
 import { apiFetch } from "./client";
 
 export interface RecognizeRequest {
-  embedding: number[];
+  model_id?: string;
+  embedding?: number[] | null;
+  image_data_url?: string | null;
   camera_id?: string;
 }
 
@@ -21,20 +23,26 @@ export interface CandidateMatch {
   sample_count: number;
 }
 
-export async function recognize(embedding: number[]): Promise<RecognizeResponse> {
+export async function recognize(request: RecognizeRequest): Promise<RecognizeResponse> {
   return apiFetch<RecognizeResponse>("/api/v1/recognize", {
     method: "POST",
     body: JSON.stringify({
-      embedding,
+      model_id: request.model_id ?? "local-default",
+      embedding: request.embedding ?? null,
+      image_data_url: request.image_data_url ?? null,
+      camera_id: request.camera_id ?? null,
     }),
   });
 }
 
-export async function recognizeCandidates(embedding: number[]): Promise<CandidateMatch[]> {
+export async function recognizeCandidates(request: RecognizeRequest): Promise<CandidateMatch[]> {
   return apiFetch<CandidateMatch[]>("/api/v1/recognize/candidates", {
     method: "POST",
     body: JSON.stringify({
-      embedding,
+      model_id: request.model_id ?? "local-default",
+      embedding: request.embedding ?? null,
+      image_data_url: request.image_data_url ?? null,
+      camera_id: request.camera_id ?? null,
     }),
   });
 }

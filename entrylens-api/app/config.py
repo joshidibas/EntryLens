@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     supabase_url: str = Field(default="", alias="SUPABASE_URL")
     supabase_service_key: str = Field(default="", alias="SUPABASE_SERVICE_KEY")
     supabase_db_url: str = Field(default="", alias="SUPABASE_DB_URL")
+    insightface_colab_url: str = Field(default="", alias="INSIGHTFACE_COLAB_URL")
+    insightface_colab_token: str = Field(default="", alias="INSIGHTFACE_COLAB_TOKEN")
+    insightface_timeout_seconds: float = Field(default=20.0, alias="INSIGHTFACE_TIMEOUT_SECONDS")
+    insightface_model_name: str = Field(default="buffalo_l", alias="INSIGHTFACE_MODEL_NAME")
+    insightface_ctx_id: int = Field(default=0, alias="INSIGHTFACE_CTX_ID")
+    insightface_det_size: str = Field(default="640,640", alias="INSIGHTFACE_DET_SIZE")
+    insightface_startup_probe: bool = Field(default=True, alias="INSIGHTFACE_STARTUP_PROBE")
 
     @property
     def cors_origins(self) -> list[str]:
@@ -31,6 +38,23 @@ class Settings(BaseSettings):
     @property
     def has_supabase_config(self) -> bool:
         return bool(self.supabase_url and self.supabase_service_key and self.supabase_db_url)
+
+    @property
+    def has_insightface_colab_config(self) -> bool:
+        return bool(self.insightface_colab_url)
+
+    @property
+    def insightface_det_size_tuple(self) -> tuple[int, int]:
+        parts = [part.strip() for part in self.insightface_det_size.split(",") if part.strip()]
+        if len(parts) != 2:
+            return (640, 640)
+        try:
+            width, height = (int(parts[0]), int(parts[1]))
+        except ValueError:
+            return (640, 640)
+        if width <= 0 or height <= 0:
+            return (640, 640)
+        return (width, height)
 
 
 @lru_cache

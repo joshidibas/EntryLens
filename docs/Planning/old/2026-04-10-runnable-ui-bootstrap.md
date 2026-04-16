@@ -723,6 +723,7 @@ This bootstrap plan crosses sprint boundaries because it is organized around the
 
 
 
+
 <!-- graphify-links:start -->
 ## Graph Links
 
@@ -745,7 +746,7 @@ This bootstrap plan crosses sprint boundaries because it is organized around the
   - [[graphify-out/wiki/communities/Community 0|Community 0]]
   - [[graphify-out/wiki/communities/Community 2|Community 2]]
   - [[graphify-out/wiki/communities/Community 3|Community 3]]
+  - [[graphify-out/wiki/communities/Community 4|Community 4]]
   - [[graphify-out/wiki/communities/Community 8|Community 8]]
-  - [[graphify-out/wiki/communities/Community 10|Community 10]]
-  - [[graphify-out/wiki/communities/Community 15|Community 15]]
+  - [[graphify-out/wiki/communities/Community 9|Community 9]]
 <!-- graphify-links:end -->

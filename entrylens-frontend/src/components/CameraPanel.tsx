@@ -73,7 +73,7 @@ export default function CameraPanel({
   isRecognizing
 }: { 
   onDetectionChange?: (snapshot: DetectionSnapshot | null) => void;
-  onRecognize?: (embedding: number[]) => boolean | Promise<boolean>;
+  onRecognize?: (snapshot: DetectionSnapshot) => boolean | Promise<boolean>;
   recognizedName?: string;
   isRecognizing?: boolean;
 }) {
@@ -137,7 +137,7 @@ export default function CameraPanel({
   }, [latestSnapshot]);
 
   useEffect(() => {
-    if (!onRecognize || !latestSnapshot?.embedding) {
+    if (!onRecognize || !latestSnapshot?.hasFace) {
       return;
     }
     if (recognitionActive) {
@@ -168,7 +168,7 @@ export default function CameraPanel({
     });
     setLocalRecognizing(true);
 
-    void Promise.resolve(onRecognize(snapshot.embedding!))
+    void Promise.resolve(onRecognize(snapshot))
       .then(() => {
         // Settle recognition for the current face until the person meaningfully changes or leaves frame.
         recognitionLockedRef.current = true;

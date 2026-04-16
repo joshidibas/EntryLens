@@ -101,6 +101,7 @@ The intended user-facing direction is:
 
 
 
+
 <!-- graphify-links:start -->
 ## Graph Links
 
@@ -114,8 +115,9 @@ The intended user-facing direction is:
   - [[graphify-out/wiki/entrylens-api/app/routes/labs.py|entrylens-api/app/routes/labs.py]]
   - [[graphify-out/wiki/entrylens-frontend/src/pages/LabsPage.tsx|entrylens-frontend/src/pages/LabsPage.tsx]]
 - Related communities:
-  - [[graphify-out/wiki/communities/Community 3|Community 3]]
+  - [[graphify-out/wiki/communities/Community 2|Community 2]]
+  - [[graphify-out/wiki/communities/Community 4|Community 4]]
   - [[graphify-out/wiki/communities/Community 5|Community 5]]
   - [[graphify-out/wiki/communities/Community 8|Community 8]]
-  - [[graphify-out/wiki/communities/Community 10|Community 10]]
+  - [[graphify-out/wiki/communities/Community 9|Community 9]]
 <!-- graphify-links:end -->

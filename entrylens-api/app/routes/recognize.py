@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 
 from app.schemas.identity import CandidateMatch
 from app.schemas.recognize import RecognizeRequest, RecognizeResponse
+from app.services.embedding_models import resolve_embedding
 from app.supabase import count_embeddings_for_identity, get_identity_by_id, search_similar_embeddings
 
 router = APIRouter(prefix="/recognize", tags=["recognition"])
@@ -9,14 +10,17 @@ router = APIRouter(prefix="/recognize", tags=["recognition"])
 
 @router.post("", response_model=RecognizeResponse)
 async def recognize(request: RecognizeRequest):
-    if not request.embedding:
-        raise HTTPException(status_code=400, detail="No embedding provided")
-
-    if len(request.embedding) != 16:
-        raise HTTPException(status_code=400, detail="Invalid embedding format")
-
     try:
-        results = await search_similar_embeddings(request.embedding, limit=1)
+        resolved_embedding = await resolve_embedding(
+            model_id=request.model_id,
+            embedding=request.embedding,
+            image_data_url=request.image_data_url,
+        )
+        results = await search_similar_embeddings(
+            resolved_embedding.embedding,
+            limit=1,
+            model_id=resolved_embedding.model_id,
+        )
 
         if not results or len(results) == 0:
             return RecognizeResponse(
@@ -50,21 +54,25 @@ async def recognize(request: RecognizeRequest):
             similarity=similarity,
             message=f"Matched: {display_name}",
         )
-
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Recognition failed: {str(e)}")
 
 
 @router.post("/candidates", response_model=list[CandidateMatch])
 async def candidate_matches(request: RecognizeRequest):
-    if not request.embedding:
-        raise HTTPException(status_code=400, detail="No embedding provided")
-
-    if len(request.embedding) != 16:
-        raise HTTPException(status_code=400, detail="Invalid embedding format")
-
     try:
-        results = await search_similar_embeddings(request.embedding, limit=10)
+        resolved_embedding = await resolve_embedding(
+            model_id=request.model_id,
+            embedding=request.embedding,
+            image_data_url=request.image_data_url,
+        )
+        results = await search_similar_embeddings(
+            resolved_embedding.embedding,
+            limit=10,
+            model_id=resolved_embedding.model_id,
+        )
         best_by_identity: dict[str, float] = {}
         for result in results:
             identity_id = result.get("identity_id")
@@ -86,10 +94,12 @@ async def candidate_matches(request: RecognizeRequest):
                     display_name=identity.get("display_name", "Unknown"),
                     identity_type=identity.get("identity_type", "visitor"),
                     similarity=similarity,
-                    sample_count=await count_embeddings_for_identity(identity_id),
+                    sample_count=await count_embeddings_for_identity(identity_id, model_id=resolved_embedding.model_id),
                 )
             )
 
         return items
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Candidate lookup failed: {str(e)}")

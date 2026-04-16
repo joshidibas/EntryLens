@@ -1,5 +1,6 @@
 import type { ChangeEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { ApiError } from "../api/client";
 import CameraPanel from "../components/CameraPanel";
 import { getLabsState } from "../api/labs";
 import { addEmbeddingToIdentity, listIdentities, type IdentitySummary } from "../api/identities";
@@ -10,7 +11,18 @@ import type { CommandResultPayload, LabModel, LabStatePayload, LabTarget, Operat
 
 const FALLBACK_TARGETS: LabTarget[] = [
   { id: "mediapipe", label: "MediaPipe", description: "Local browser-side face detection and landmark playground.", status: "ready", operation: "detect", engine_kind: "local", models: [{ id: "face-landmarker", label: "Face Landmarker", description: "Browser-side landmarks and pose gating." }] },
-  { id: "local-recognition", label: "Local Recognition", description: "Local enrollment and recognition flow backed by MediaPipe embeddings and Supabase storage.", status: "ready", operation: "recognize", engine_kind: "local", models: [{ id: "local-default", label: "Local Default", description: "Local recognition with MediaPipe embeddings." }] },
+  {
+    id: "local-recognition",
+    label: "Local Recognition",
+    description: "Local enrollment and recognition flow backed by MediaPipe embeddings and Supabase storage.",
+    status: "ready",
+    operation: "recognize",
+    engine_kind: "local",
+    models: [
+      { id: "local-default", label: "Local Default", description: "Local recognition with MediaPipe embeddings.", input_mode: "browser-embedding", enabled: true, status: "ready", health: "ok" },
+      { id: "insightface-local", label: "InsightFace (Local)", description: "Backend-hosted InsightFace embedding extraction.", input_mode: "image-data", enabled: false, status: "disabled", health: "unavailable", unavailable_reason: "Install local InsightFace backend dependencies to enable this model." },
+    ],
+  },
 ];
 
 const OPERATIONS: Array<{ id: OperationId; label: string }> = [
@@ -52,11 +64,22 @@ export default function LabsPage() {
   const targets = lab?.targets ?? FALLBACK_TARGETS;
   const filteredTargets = useMemo(() => targets.filter((target) => target.operation === selectedOperation), [targets, selectedOperation]);
   const currentTarget = useMemo(() => filteredTargets.find((target) => target.id === selectedTarget) ?? filteredTargets[0] ?? null, [filteredTargets, selectedTarget]);
-  const currentModel = useMemo<LabModel | null>(() => currentTarget?.models?.find((model) => model.id === selectedModel) ?? currentTarget?.models?.[0] ?? null, [currentTarget, selectedModel]);
+  const enabledModels = useMemo(() => (currentTarget?.models ?? []).filter((model) => model.enabled !== false), [currentTarget]);
+  const currentModel = useMemo<LabModel | null>(() => currentTarget?.models?.find((model) => model.id === selectedModel) ?? enabledModels[0] ?? currentTarget?.models?.[0] ?? null, [currentTarget, selectedModel, enabledModels]);
   const isRecognize = selectedOperation === "recognize";
   const isPlanned = currentTarget?.status === "planned";
   const isMediaPipe = currentTarget?.id === "mediapipe";
   const isLocalRecognition = currentTarget?.id === "local-recognition";
+  const requiresRemoteImage = currentModel?.input_mode === "image-data";
+  const hasRequiredModelInput = requiresRemoteImage ? !!liveDetection?.imageDataUrl : !!liveDetection?.embedding;
+
+  function getRecognitionRequest(snapshot = liveDetection) {
+    return {
+      model_id: currentModel?.id ?? "local-default",
+      embedding: requiresRemoteImage ? null : snapshot?.embedding ?? null,
+      image_data_url: snapshot?.imageDataUrl ?? null,
+    };
+  }
 
   async function refreshState(targetOverride = currentTarget?.id ?? selectedTarget) {
     setLoading(true);
@@ -76,6 +99,16 @@ export default function LabsPage() {
   }, [selectedTarget]);
 
   useEffect(() => {
+    if (!currentTarget) {
+      return;
+    }
+    const selectableModels = currentTarget.models.filter((model) => model.enabled !== false);
+    if (!selectableModels.some((model) => model.id === selectedModel)) {
+      setSelectedModel(selectableModels[0]?.id ?? currentTarget.models[0]?.id ?? "");
+    }
+  }, [currentTarget, selectedModel]);
+
+  useEffect(() => {
     void refreshIdentities();
   }, []);
 
@@ -93,12 +126,18 @@ export default function LabsPage() {
           setBusyCommand("");
           return;
         }
-        if (!liveDetection?.embedding) {
-          setError("No face embedding. Please ensure your face is visible in the camera.");
+        if (!hasRequiredModelInput) {
+          setError(requiresRemoteImage
+            ? "No face image is available yet. Please ensure your face is visible in the camera."
+            : "No face embedding. Please ensure your face is visible in the camera.");
           setBusyCommand("");
           return;
         }
-        const result: EnrollResponse = await enroll(personName, liveDetection.embedding, liveDetection.imageDataUrl);
+        const result: EnrollResponse = await enroll(personName, {
+          modelId: currentModel?.id,
+          embedding: requiresRemoteImage ? null : liveDetection?.embedding ?? null,
+          imageDataUrl: liveDetection?.imageDataUrl,
+        });
         if (result.enrolled) {
           setSuccess(`Enrolled as ${result.name}`);
           setPersonName("");
@@ -109,7 +148,11 @@ export default function LabsPage() {
         setSuccess(`${command} completed.`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Command failed.");
+      if (err instanceof ApiError) {
+        setError(err.suggestion ? `${err.message} ${err.suggestion}` : err.message);
+      } else {
+        setError(err instanceof Error ? err.message : "Command failed.");
+      }
     } finally {
       setBusyCommand("");
     }
@@ -128,7 +171,7 @@ export default function LabsPage() {
   }
 
   async function handleCreateFromUnknown() {
-    if (!unknownName || !liveDetection?.embedding) {
+    if (!unknownName || !hasRequiredModelInput) {
       setError("Enter a name and keep a face visible before creating a new person.");
       return;
     }
@@ -137,7 +180,11 @@ export default function LabsPage() {
     setError("");
     setSuccess("");
     try {
-      const result = await enroll(unknownName, liveDetection.embedding, liveDetection.imageDataUrl);
+      const result = await enroll(unknownName, {
+        modelId: currentModel?.id,
+        embedding: requiresRemoteImage ? null : liveDetection?.embedding ?? null,
+        imageDataUrl: liveDetection?.imageDataUrl,
+      });
       if (!result.enrolled) {
         setError(result.message || "Enrollment failed.");
         return;
@@ -156,14 +203,18 @@ export default function LabsPage() {
         setSelectedIdentityId(result.subject_id);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create a new person.");
+      if (err instanceof ApiError) {
+        setError(err.suggestion ? `${err.message} ${err.suggestion}` : err.message);
+      } else {
+        setError(err instanceof Error ? err.message : "Could not create a new person.");
+      }
     } finally {
       setUnknownActionBusy("");
     }
   }
 
   async function handleAddSampleToExisting() {
-    if (!selectedIdentityId || !liveDetection?.embedding) {
+    if (!selectedIdentityId || !hasRequiredModelInput) {
       setError("Choose an existing person and keep a face visible before adding a sample.");
       return;
     }
@@ -173,18 +224,22 @@ export default function LabsPage() {
     setSuccess("");
     try {
       const selectedCandidate = candidateMatches.find((item) => item.identity_id === selectedIdentityId);
-      const result = await addEmbeddingToIdentity(
-        selectedIdentityId,
-        liveDetection.embedding,
-        selectedCandidate?.similarity,
-        liveDetection.imageDataUrl,
-      );
+      const result = await addEmbeddingToIdentity(selectedIdentityId, {
+        modelId: currentModel?.id,
+        embedding: requiresRemoteImage ? null : liveDetection?.embedding ?? null,
+        sourceConfidence: selectedCandidate?.similarity,
+        imageDataUrl: liveDetection?.imageDataUrl,
+      });
       const selectedIdentity = identities.find((item) => item.id === selectedIdentityId);
       setSuccess(result.message || `Added a new sample to ${selectedIdentity?.display_name ?? "the selected person"}.`);
       setCandidateMatches([]);
       await refreshIdentities();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not add a new sample to this person.");
+      if (err instanceof ApiError) {
+        setError(err.suggestion ? `${err.message} ${err.suggestion}` : err.message);
+      } else {
+        setError(err instanceof Error ? err.message : "Could not add a new sample to this person.");
+      }
     } finally {
       setUnknownActionBusy("");
     }
@@ -201,6 +256,30 @@ export default function LabsPage() {
           {error ? <p className="error-banner">{error}</p> : null}
           {success ? <p className="success-banner">{success}</p> : null}
 
+          <label style={{ marginBottom: "1rem", display: "block" }}>
+            <span style={{ display: "block", marginBottom: "0.35rem", fontWeight: 600, fontSize: "0.875rem" }}>Recognition model</span>
+            <select
+              value={currentModel?.id ?? ""}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) => setSelectedModel(event.target.value)}
+              style={{ width: "100%", padding: "0.65rem", borderRadius: "8px", border: "1px solid #cbd5e1" }}
+            >
+              {(currentTarget?.models ?? []).map((model) => (
+                <option key={model.id} value={model.id} disabled={model.enabled === false}>
+                  {model.enabled === false ? `${model.label} (not configured)` : model.label}
+                </option>
+              ))}
+            </select>
+            {currentModel ? <span style={{ display: "block", marginTop: "0.35rem", color: "#64748b", fontSize: "0.85rem" }}>{currentModel.description}</span> : null}
+            {currentModel?.health ? (
+              <span style={{ display: "block", marginTop: "0.35rem", color: currentModel.health === "ok" ? "#15803d" : currentModel.health === "degraded" ? "#b45309" : "#b91c1c", fontSize: "0.85rem" }}>
+                Health: {currentModel.health}
+              </span>
+            ) : null}
+            {currentModel?.enabled === false && currentModel.unavailable_reason ? (
+              <span style={{ display: "block", marginTop: "0.35rem", color: "#b45309", fontSize: "0.85rem" }}>{currentModel.unavailable_reason}</span>
+            ) : null}
+          </label>
+
           <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
             <button type="button" onClick={() => { setLocalTab("enroll"); setIdentifyResult(null); }} style={{ padding: "0.5rem 1rem", backgroundColor: localTab === "enroll" ? "#3b82f6" : "#e5e7eb", color: localTab === "enroll" ? "white" : "#374151", border: "none", borderRadius: "4px", cursor: "pointer" }}>Enroll</button>
             <button type="button" onClick={() => { setLocalTab("identify"); setIdentifyResult(null); }} style={{ padding: "0.5rem 1rem", backgroundColor: localTab === "identify" ? "#3b82f6" : "#e5e7eb", color: localTab === "identify" ? "white" : "#374151", border: "none", borderRadius: "4px", cursor: "pointer" }}>Identify</button>
@@ -213,16 +292,16 @@ export default function LabsPage() {
               <CameraPanel onDetectionChange={handleDetectionChange} />
               <div style={{ marginTop: "0.5rem", fontSize: "0.875rem" }}>
                 {liveDetection?.hasFace ? <span style={{ color: "#22c55e" }}>Face detected</span> : <span style={{ color: "#6b7280" }}>No face detected</span>}
-                {liveDetection?.embedding && <span style={{ marginLeft: "1rem" }}>Embedding ready</span>}
+                {hasRequiredModelInput && <span style={{ marginLeft: "1rem" }}>{requiresRemoteImage ? "Image ready" : "Embedding ready"}</span>}
               </div>
-              <button type="button" onClick={() => void handleCommand("enroll")} disabled={!personName || !liveDetection?.embedding || busyCommand === "enroll"} style={{ marginTop: "1rem", width: "100%", padding: "0.75rem", backgroundColor: (!personName || !liveDetection?.embedding) ? "#9ca3af" : "#3b82f6", color: "white", border: "none", borderRadius: "4px", fontSize: "1rem", fontWeight: "bold" }}>{busyCommand === "enroll" ? "Enrolling..." : "Enroll"}</button>
+              <button type="button" onClick={() => void handleCommand("enroll")} disabled={!personName || !hasRequiredModelInput || busyCommand === "enroll"} style={{ marginTop: "1rem", width: "100%", padding: "0.75rem", backgroundColor: (!personName || !hasRequiredModelInput) ? "#9ca3af" : "#3b82f6", color: "white", border: "none", borderRadius: "4px", fontSize: "1rem", fontWeight: "bold" }}>{busyCommand === "enroll" ? "Enrolling..." : "Enroll"}</button>
             </>
           ) : (
             <>
               <p className="helper-copy">Live camera with auto-recognition. Your name will appear when recognized.</p>
               <CameraPanel
                 onDetectionChange={handleDetectionChange}
-                onRecognize={runRecognition}
+                onRecognize={(snapshot) => runRecognition(getRecognitionRequest(snapshot))}
                 recognizedName={identifyResult?.matched ? identifyResult.name ?? undefined : undefined}
                 isRecognizing={isIdentifying}
               />
@@ -274,7 +353,7 @@ export default function LabsPage() {
                     <button
                       type="button"
                       onClick={() => void handleCreateFromUnknown()}
-                      disabled={!unknownName || !liveDetection?.embedding || unknownActionBusy !== ""}
+                      disabled={!unknownName || !hasRequiredModelInput || unknownActionBusy !== ""}
                       style={{ padding: "0.75rem 1rem", backgroundColor: "#2563eb", color: "white", border: "none", borderRadius: "8px", fontWeight: 700 }}
                     >
                       {unknownActionBusy === "create" ? "Creating..." : "Create New Person From This Face"}
@@ -300,7 +379,7 @@ export default function LabsPage() {
                     <button
                       type="button"
                       onClick={() => void handleAddSampleToExisting()}
-                      disabled={!selectedIdentityId || !liveDetection?.embedding || unknownActionBusy !== ""}
+                      disabled={!selectedIdentityId || !hasRequiredModelInput || unknownActionBusy !== ""}
                       style={{ padding: "0.75rem 1rem", backgroundColor: "#0f766e", color: "white", border: "none", borderRadius: "8px", fontWeight: 700 }}
                     >
                       {unknownActionBusy === "append" ? "Saving Sample..." : "Add Current Face As Another Sample"}

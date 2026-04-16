@@ -2,7 +2,7 @@
 
 This `docs/` tree is the low-noise entry point for future LLMs and developers working in this repository.
 
-The repository currently contains planning and architecture material only. The application code described in the root documents is not present in this checkout yet, so these docs focus on current truth and on how to avoid treating planned paths as implemented paths.
+The repository now contains both planning material and runnable application code. These docs exist to keep current repo truth separate from older architecture and roadmap documents that still describe planned or partially outdated paths.
 
 ## Read Order
 
@@ -12,25 +12,25 @@ The repository currently contains planning and architecture material only. The a
 4. `docs/project-truth/runtime-flows.md`
 5. `docs/project-truth/data-model.md`
 6. `docs/Planning/Plan.md`
-7. `ENTRYLENS_BUILD_PLAN.md` (root - current build instructions)
-8. `docs/Planning/archive/ENTRYLENS_MASTER_PLAN_reference.md` (archived - broader product vision)
+7. `README.md`
+8. `ENTRYLENS_MASTER_PLAN.md` (root - broader backlog and intended future tree)
 
 ## Read This First
 
 For most future agent sessions, start with this tighter subset instead of loading everything:
 
-1. Read [`docs/agents.md`](/d:/Testproject2/VisitorsTrackers/docs/agents.md).
-2. Read [`docs/project-truth/repo-map.md`](/d:/Testproject2/VisitorsTrackers/docs/project-truth/repo-map.md).
-3. Read [`docs/project-truth/architecture-truth.md`](/d:/Testproject2/VisitorsTrackers/docs/project-truth/architecture-truth.md).
-4. Read [`docs/tasks/lessons.md`](/d:/Testproject2/VisitorsTrackers/docs/tasks/lessons.md).
+1. Read [`docs/agents.md`](/d:/Testproject2/EntryLens/docs/agents.md).
+2. Read [`docs/project-truth/repo-map.md`](/d:/Testproject2/EntryLens/docs/project-truth/repo-map.md).
+3. Read [`docs/project-truth/architecture-truth.md`](/d:/Testproject2/EntryLens/docs/project-truth/architecture-truth.md).
+4. Read [`docs/tasks/lessons.md`](/d:/Testproject2/EntryLens/docs/tasks/lessons.md).
 
 Then expand only as needed:
 
 - add `docs/project-truth/runtime-flows.md` for route or operator flow work
 - add `docs/project-truth/data-model.md` for schema or contract work
 - add `docs/Planning/Plan.md` before non-trivial multi-step implementation
-- read `ENTRYLENS_BUILD_PLAN.md` for current implementation instructions
-- read `docs/Planning/archive/ENTRYLENS_MASTER_PLAN_reference.md` only if you need the broader product vision from the original master plan
+- read `README.md` for current local setup and run instructions
+- read `ENTRYLENS_MASTER_PLAN.md` only if you need the broader backlog and historical intended file tree
 
 This shorter path is preferred because it gives agents the current repo state, the main design/reality split, and the most important failure-prevention rules with minimal noise.
 
@@ -62,21 +62,19 @@ This shorter path is preferred because it gives agents the current repo state, t
   Current working checklist and verification notes.
 - `docs/tasks/lessons.md`
   Repeated mistakes, corrections, and preventive rules.
-- `ENTRYLENS_BUILD_PLAN.md`
-  Current build instructions for implementing the local recognition pipeline.
-- `ENTRYLENS_ARCHITECTURE.md`
-  Main product design source.
-- `docs/Planning/archive/ENTRYLENS_MASTER_PLAN_reference.md`
-  Original master plan archived for broader context (product vision, sprints, epics).
+- `README.md`
+  Current setup and local run instructions for the repo.
+- `ENTRYLENS_MASTER_PLAN.md`
+  Large root backlog and future-looking implementation plan that still contains legacy naming.
 
 ## Quick Reference Rules
 
 - State what exists in this repo now, not what the architecture intends later.
-- Treat [`ENTRYLENS_ARCHITECTURE.md`](/d:/Testproject2/VisitorsTrackers/ENTRYLENS_ARCHITECTURE.md) as the main product design source.
-- Treat [`ENTRYLENS_BUILD_PLAN.md`](/d:/Testproject2/VisitorsTrackers/ENTRYLENS_BUILD_PLAN.md) as the current execution source.
-- Use [`docs/Planning/archive/ENTRYLENS_MASTER_PLAN_reference.md`](/d:/Testproject2/VisitorsTrackers/docs/Planning/archive/ENTRYLENS_MASTER_PLAN_reference.md) only when you need broader context about original product vision.
+- Treat [`README.md`](/d:/Testproject2/EntryLens/README.md) and [`docs/project-truth/repo-map.md`](/d:/Testproject2/EntryLens/docs/project-truth/repo-map.md) as the fastest current-state entry points.
+- Treat [`ENTRYLENS_MASTER_PLAN.md`](/d:/Testproject2/EntryLens/ENTRYLENS_MASTER_PLAN.md) as roadmap context, not implementation truth.
 - Do not claim paths like `sentinel-api/` or `sentinel-frontend/` exist unless they are actually added to the repo.
 - Update `docs/project-truth/*` when repo reality changes.
+
 
 
 

@@ -107,6 +107,7 @@ Implement the initial local recognition pipeline: enrollment endpoint, recogniti
 
 
 
+
 <!-- graphify-links:start -->
 ## Graph Links
 
@@ -125,5 +126,6 @@ Implement the initial local recognition pipeline: enrollment endpoint, recogniti
   - [[graphify-out/wiki/communities/Community 0|Community 0]]
   - [[graphify-out/wiki/communities/Community 2|Community 2]]
   - [[graphify-out/wiki/communities/Community 3|Community 3]]
-  - [[graphify-out/wiki/communities/Community 8|Community 8]]
+  - [[graphify-out/wiki/communities/Community 4|Community 4]]
+  - [[graphify-out/wiki/communities/Community 9|Community 9]]
 <!-- graphify-links:end -->

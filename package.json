@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "powershell -ExecutionPolicy Bypass -File ./scripts/dev.ps1",
     "dev:api": "python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --app-dir entrylens-api",
-    "dev:frontend": "npm run dev --prefix entrylens-frontend"
+    "dev:frontend": "npm run dev --prefix entrylens-frontend",
+    "graphify:update": "powershell -ExecutionPolicy Bypass -File ./scripts/refresh_graphify_obsidian.ps1"
   }
 }

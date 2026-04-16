@@ -2,9 +2,9 @@
 
 ## Current Task
 
-DONE (2026-04-11): Detection logs and unknown-identity review flow
+ACTIVE (2026-04-16): Backend-first model runtime transition
 
-Live feed now creates `detection_logs`, auto-tags at high confidence, creates placeholder unknown identities when needed, and supports later merge/review from detection-log detail pages.
+The active planning direction is to replace the experimental Google Colab inference path with a backend-hosted model runtime and a plug-and-play model registry so Labs can switch models without route rewrites.
 
 ## Implementation Checklist
 
@@ -22,6 +22,13 @@ Live feed now creates `detection_logs`, auto-tags at high confidence, creates pl
 - [x] Prevent rapid duplicate detection logs for the same recognized person or unknown signature.
 - [x] Add detection-log list/detail pages.
 - [x] Add detail-page rename / merge / promote-sample actions.
+- [ ] Archive the Colab-first active plan and replace it with a backend-first model runtime plan.
+- [ ] Introduce a backend model registry for recognition models and model metadata.
+- [ ] Refactor embedding resolution so model runners are registry-driven.
+- [ ] Add an `insightface-local` backend runner that replaces the preferred Colab path.
+- [ ] Make Labs read model availability and capability metadata from backend state.
+- [ ] Refactor Supabase model routing to be driven by model definitions instead of ad hoc branching.
+- [ ] Document the local setup and diagnostics required for backend-hosted model execution.
 
 ## Database Documentation
 
@@ -33,6 +40,8 @@ Live feed now creates `detection_logs`, auto-tags at high confidence, creates pl
 - MediaPipe is still the primary active engine for detection and placeholder matching.
 - Local recognition via Labs and Live works, and only `/live` now writes `detection_logs`.
 - `detection_logs` is separate from attendance and supports placeholder unknown review plus later identity merge/promotion.
+- The next architecture step is to make backend inference pluggable so different embedding models can be added or swapped with minimal app-surface changes.
+
 
 
 

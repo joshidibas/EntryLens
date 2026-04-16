@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { recognize, recognizeCandidates, type CandidateMatch } from "../api/recognize";
+import { recognize, recognizeCandidates, type CandidateMatch, type RecognizeRequest } from "../api/recognize";
 import { hasMeaningfulEmbeddingChange } from "../lib/recognition";
 import type { DetectionSnapshot } from "../types";
 
@@ -65,7 +65,7 @@ export function useRecognitionSession(options: UseRecognitionSessionOptions = {}
     }
   }
 
-  async function runRecognition(embedding: number[]): Promise<boolean> {
+  async function runRecognition(request: RecognizeRequest): Promise<boolean> {
     const startedAt = Date.now();
     const runId = identifyRunIdRef.current + 1;
     identifyRunIdRef.current = runId;
@@ -73,8 +73,8 @@ export function useRecognitionSession(options: UseRecognitionSessionOptions = {}
 
     try {
       const [recognizeResult, candidates] = await Promise.all([
-        recognize(embedding),
-        includeCandidates ? recognizeCandidates(embedding) : Promise.resolve([]),
+        recognize(request),
+        includeCandidates ? recognizeCandidates(request) : Promise.resolve([]),
       ]);
 
       setCandidateMatches(candidates);

@@ -8,9 +8,27 @@ from typing import Any
 
 from fastapi import HTTPException, UploadFile, status
 
+from app.services.model_registry import get_registered_models
+
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
+
+
+def _local_recognition_models() -> list[dict[str, Any]]:
+    return [
+        {
+            "id": model.id,
+            "label": model.label,
+            "description": model.description,
+            "input_mode": model.input_mode,
+            "enabled": model.enabled,
+            "status": model.status,
+            "health": model.health,
+            "unavailable_reason": model.unavailable_reason,
+        }
+        for model in get_registered_models()
+    ]
 
 PLAYGROUND_TARGETS: dict[str, dict[str, Any]] = {
     "mediapipe": {
@@ -41,13 +59,7 @@ PLAYGROUND_TARGETS: dict[str, dict[str, Any]] = {
         "description": "Local enrollment and recognition flow backed by MediaPipe embeddings and Supabase storage.",
         "operation": "recognize",
         "engine_kind": "local",
-        "models": [
-            {
-                "id": "local-default",
-                "label": "Local Default",
-                "description": "Local recognition with MediaPipe embeddings.",
-            }
-        ],
+        "models": _local_recognition_models(),
         "root": REPO_ROOT,
         "enroll_root": None,
         "probe_root": None,
@@ -160,7 +172,7 @@ def _target_summaries() -> list[dict[str, Any]]:
             "status": config.get("status", "ready"),
             "operation": config["operation"],
             "engine_kind": config["engine_kind"],
-            "models": config.get("models", []),
+            "models": _local_recognition_models() if target_id == "local-recognition" else config.get("models", []),
             "supports_enroll_upload": config["supports_enroll_upload"],
             "supports_probe_upload": config["supports_probe_upload"],
         }

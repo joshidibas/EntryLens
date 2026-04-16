@@ -115,18 +115,22 @@ export async function deleteIdentity(identityId: string): Promise<IdentityDelete
 
 export async function addEmbeddingToIdentity(
   identityId: string,
-  embedding: number[],
-  sourceConfidence?: number,
-  imageDataUrl?: string | null,
+  options: {
+    modelId?: string;
+    embedding?: number[] | null;
+    sourceConfidence?: number;
+    imageDataUrl?: string | null;
+  } = {},
 ): Promise<AddIdentitySampleResponse> {
   return apiFetch<AddIdentitySampleResponse>(`/api/v1/identities/${identityId}/embeddings`, {
     method: "POST",
     body: JSON.stringify({
-      embedding,
+      model_id: options.modelId ?? "local-default",
+      embedding: options.embedding ?? null,
       sample_kind: "face",
-      image_data_url: imageDataUrl ?? null,
+      image_data_url: options.imageDataUrl ?? null,
       capture_source: "unknown-review",
-      capture_confidence: sourceConfidence ?? null,
+      capture_confidence: options.sourceConfidence ?? null,
     }),
   });
 }

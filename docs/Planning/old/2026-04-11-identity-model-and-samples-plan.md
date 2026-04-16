@@ -345,6 +345,7 @@ Docs:
 
 
 
+
 <!-- graphify-links:start -->
 ## Graph Links
 
@@ -360,6 +361,6 @@ Docs:
 - Related communities:
   - [[graphify-out/wiki/communities/Community 0|Community 0]]
   - [[graphify-out/wiki/communities/Community 1|Community 1]]
-  - [[graphify-out/wiki/communities/Community 30|Community 30]]
-  - [[graphify-out/wiki/communities/Community 34|Community 34]]
+  - [[graphify-out/wiki/communities/Community 31|Community 31]]
+  - [[graphify-out/wiki/communities/Community 35|Community 35]]
 <!-- graphify-links:end -->

@@ -12,7 +12,7 @@ EntryLens is a local development workspace for a face-recognition attendance and
 Install these before running the project:
 
 - Node.js 20+ with `npm`
-- Python 3.11+ with `pip`
+- Python 3.11 or 3.12 with `pip`
 - PowerShell
 - A Supabase project
 
@@ -39,11 +39,30 @@ Minimum values you should review:
 - `VITE_API_KEY`
 - `VITE_WS_BASE_URL`
 
+Optional legacy values for the old `InsightFace (Colab)` path:
+
+- `INSIGHTFACE_COLAB_URL`
+- `INSIGHTFACE_COLAB_TOKEN`
+- `INSIGHTFACE_TIMEOUT_SECONDS`
+
+Optional values for backend-local InsightFace:
+
+- `INSIGHTFACE_MODEL_NAME`
+- `INSIGHTFACE_CTX_ID`
+- `INSIGHTFACE_DET_SIZE`
+- `INSIGHTFACE_STARTUP_PROBE`
+
+Backend-local InsightFace now has priority over the old Colab path. The Colab settings above are legacy and optional.
+
 Notes:
 
 - The backend reads the root `.env`.
 - The frontend uses the `VITE_*` values from the same root `.env`.
 - `SENTINEL_API_KEY` and `VITE_API_KEY` should match for local development.
+- The old `InsightFace (Colab)` lab path remains unavailable until `INSIGHTFACE_COLAB_URL` is set and the API is restarted.
+- The preferred InsightFace direction is backend-local execution, which depends on backend Python packages such as `insightface`, `onnxruntime`, and `opencv-python-headless`.
+- With `INSIGHTFACE_STARTUP_PROBE=true`, the API logs a startup probe result for each model so missing local dependencies show up immediately.
+- On Windows, backend-local InsightFace is currently much smoother in a Python 3.11 or 3.12 environment. In this repo, Python 3.13 required newer `onnxruntime` and still hit an `insightface` source-build failure without Microsoft C++ Build Tools.
 
 ## Supabase Setup
 

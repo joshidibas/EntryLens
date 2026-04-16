@@ -52,6 +52,7 @@ Use `graphify-out/wiki/` when you want code structure, hot spots, and connected 
 Use Obsidian Graph View or backlinks when you want to move between those two worlds quickly.
 
 
+
 <!-- graphify-links:start -->
 ## Graph Links
 

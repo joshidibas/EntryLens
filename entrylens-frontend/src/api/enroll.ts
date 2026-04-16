@@ -3,7 +3,8 @@ import { apiFetch } from "./client";
 export interface EnrollRequest {
   name: string;
   role?: string;
-  embedding: number[];
+  model_id?: string;
+  embedding?: number[] | null;
   image_data_url?: string | null;
 }
 
@@ -15,14 +16,22 @@ export interface EnrollResponse {
   message: string | null;
 }
 
-export async function enroll(name: string, embedding: number[], imageDataUrl?: string | null): Promise<EnrollResponse> {
+export async function enroll(
+  name: string,
+  options: {
+    modelId?: string;
+    embedding?: number[] | null;
+    imageDataUrl?: string | null;
+  } = {},
+): Promise<EnrollResponse> {
   return apiFetch<EnrollResponse>("/api/v1/enroll", {
     method: "POST",
     body: JSON.stringify({
       name,
       role: "visitor",
-      embedding,
-      image_data_url: imageDataUrl ?? null,
+      model_id: options.modelId ?? "local-default",
+      embedding: options.embedding ?? null,
+      image_data_url: options.imageDataUrl ?? null,
     }),
   });
 }

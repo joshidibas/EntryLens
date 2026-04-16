@@ -348,6 +348,7 @@ After implementation becomes real, update:
 
 
 
+
 <!-- graphify-links:start -->
 ## Graph Links
 
@@ -363,8 +364,8 @@ After implementation becomes real, update:
   - [[graphify-out/wiki/entrylens-frontend/src/pages/LivePage.tsx|entrylens-frontend/src/pages/LivePage.tsx]]
 - Related communities:
   - [[graphify-out/wiki/communities/Community 0|Community 0]]
-  - [[graphify-out/wiki/communities/Community 3|Community 3]]
+  - [[graphify-out/wiki/communities/Community 2|Community 2]]
   - [[graphify-out/wiki/communities/Community 11|Community 11]]
   - [[graphify-out/wiki/communities/Community 13|Community 13]]
-  - [[graphify-out/wiki/communities/Community 30|Community 30]]
+  - [[graphify-out/wiki/communities/Community 31|Community 31]]
 <!-- graphify-links:end -->

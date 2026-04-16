@@ -4,8 +4,25 @@ from typing import Any, Optional
 from supabase import Client, create_client
 
 from app.config import get_settings
+from app.services.model_registry import (
+    INSIGHTFACE_LOCAL_MODEL_ID,
+    LEGACY_INSIGHTFACE_COLAB_MODEL_ID,
+    LOCAL_DEFAULT_MODEL_ID,
+    get_all_storage_tables,
+    get_model_definition,
+)
 
 settings = get_settings()
+
+
+def _embedding_table_for_model(model_id: str) -> str:
+    normalized_model_id = INSIGHTFACE_LOCAL_MODEL_ID if model_id == LEGACY_INSIGHTFACE_COLAB_MODEL_ID else model_id
+    return get_model_definition(normalized_model_id).storage_table
+
+
+def _embedding_rpc_for_model(model_id: str) -> str:
+    normalized_model_id = INSIGHTFACE_LOCAL_MODEL_ID if model_id == LEGACY_INSIGHTFACE_COLAB_MODEL_ID else model_id
+    return get_model_definition(normalized_model_id).match_rpc
 
 
 def _identity_payload(identity: dict[str, Any]) -> dict[str, Any]:
@@ -24,6 +41,7 @@ def _sample_payload(sample: dict[str, Any]) -> dict[str, Any]:
     metadata = sample.get("metadata") or {}
     return {
         **sample,
+        "model_id": sample.get("model_id") or LOCAL_DEFAULT_MODEL_ID,
         "sample_kind": sample.get("sample_kind") or "face",
         "image_path": sample.get("image_path"),
         "capture_source": sample.get("capture_source") or metadata.get("source"),
@@ -62,7 +80,13 @@ async def get_supabase() -> Optional[Client]:
     return SupabaseClient.get_client()
 
 
-async def store_embedding(identity_id: str, embedding: list[float], metadata: Optional[dict[str, Any]] = None) -> bool:
+async def store_embedding(
+    identity_id: str,
+    embedding: list[float],
+    metadata: Optional[dict[str, Any]] = None,
+    *,
+    model_id: str = LOCAL_DEFAULT_MODEL_ID,
+) -> bool:
     """Store embedding in Supabase (using pgvector)."""
     client = SupabaseClient.get_client()
     if not client:
@@ -72,18 +96,19 @@ async def store_embedding(identity_id: str, embedding: list[float], metadata: Op
         data = {
             "identity_id": identity_id,
             "embedding": embedding,
+            "model_id": model_id,
         }
         if metadata:
             data["metadata"] = metadata
 
-        client.table("embeddings").insert(data).execute()
+        client.table(_embedding_table_for_model(model_id)).insert(data).execute()
         return True
     except Exception as e:
         print(f"Failed to store embedding: {e}")
         return False
 
 
-async def search_similar_embeddings(embedding: list[float], limit: int = 5) -> list[dict[str, Any]]:
+async def search_similar_embeddings(embedding: list[float], limit: int = 5, *, model_id: str = LOCAL_DEFAULT_MODEL_ID) -> list[dict[str, Any]]:
     """Search for similar embeddings using vector similarity."""
     client = SupabaseClient.get_client()
     if not client:
@@ -91,7 +116,7 @@ async def search_similar_embeddings(embedding: list[float], limit: int = 5) -> l
 
     try:
         response = client.rpc(
-            "match_embeddings",
+            _embedding_rpc_for_model(model_id),
             {
                 "query_embedding": embedding,
                 "match_limit": limit,
@@ -166,31 +191,45 @@ async def update_identity(
         return None
 
 
-async def count_embeddings_for_identity(identity_id: str) -> int:
+async def count_embeddings_for_identity(identity_id: str, *, model_id: str | None = None) -> int:
     """Count how many embeddings belong to an identity."""
     client = SupabaseClient.get_client()
     if not client:
         return 0
 
     try:
-        response = client.table("embeddings").select("id", count="exact").eq("identity_id", identity_id).execute()
-        return response.count or 0
+        tables = [_embedding_table_for_model(model_id)] if model_id else get_all_storage_tables()
+        total = 0
+        for table_name in tables:
+            try:
+                response = client.table(table_name).select("id", count="exact").eq("identity_id", identity_id).execute()
+                total += response.count or 0
+            except Exception as inner_exc:
+                print(f"Failed to count embeddings in table {table_name}: {inner_exc}")
+        return total
     except Exception as e:
         print(f"Failed to count embeddings: {e}")
         return 0
 
 
-async def list_embeddings_for_identity(identity_id: str) -> list[dict[str, Any]]:
+async def list_embeddings_for_identity(identity_id: str, *, model_id: str | None = None) -> list[dict[str, Any]]:
     """List stored embeddings for a given identity."""
     client = SupabaseClient.get_client()
     if not client:
         return []
 
     try:
-        response = client.table("embeddings").select(
-            "id, created_at, updated_at, sample_kind, image_path, capture_source, capture_confidence, is_reference, is_profile_source, metadata"
-        ).eq("identity_id", identity_id).order("created_at", desc=True).execute()
-        return [_sample_payload(item) for item in (response.data or [])]
+        tables = [_embedding_table_for_model(model_id)] if model_id else get_all_storage_tables()
+        items: list[dict[str, Any]] = []
+        for table_name in tables:
+            try:
+                response = client.table(table_name).select(
+                    "id, created_at, updated_at, sample_kind, image_path, capture_source, capture_confidence, is_reference, is_profile_source, metadata, model_id, identity_id"
+                ).eq("identity_id", identity_id).order("created_at", desc=True).execute()
+                items.extend(_sample_payload(item) for item in (response.data or []))
+            except Exception as inner_exc:
+                print(f"Failed to list embeddings in table {table_name}: {inner_exc}")
+        return sorted(items, key=lambda item: item.get("created_at") or "", reverse=True)
     except Exception as e:
         print(f"Failed to list embeddings: {e}")
         return []
@@ -216,28 +255,40 @@ async def get_embedding_by_id(embedding_id: str) -> Optional[dict[str, Any]]:
         return None
 
     try:
-        response = client.table("embeddings").select("*").eq("id", embedding_id).execute()
-        return _sample_payload(response.data[0]) if response.data else None
+        for table_name in get_all_storage_tables():
+            try:
+                response = client.table(table_name).select("*").eq("id", embedding_id).execute()
+                if response.data:
+                    return _sample_payload(response.data[0])
+            except Exception as inner_exc:
+                print(f"Failed to get embedding from table {table_name}: {inner_exc}")
+        return None
     except Exception as e:
         print(f"Failed to get embedding: {e}")
         return None
 
 
-async def update_embedding_metadata(embedding_id: str, metadata: dict[str, Any]) -> bool:
+async def update_embedding_metadata(embedding_id: str, metadata: dict[str, Any], *, model_id: str = LOCAL_DEFAULT_MODEL_ID) -> bool:
     """Replace metadata for a single embedding row."""
     client = SupabaseClient.get_client()
     if not client:
         return False
 
     try:
-        client.table("embeddings").update({"metadata": metadata}).eq("id", embedding_id).execute()
+        client.table(_embedding_table_for_model(model_id)).update({"metadata": metadata}).eq("id", embedding_id).execute()
         return True
     except Exception as e:
         print(f"Failed to update embedding metadata: {e}")
         return False
 
 
-async def update_embedding_flags(embedding_id: str, *, is_reference: bool | None = None, is_profile_source: bool | None = None) -> bool:
+async def update_embedding_flags(
+    embedding_id: str,
+    *,
+    is_reference: bool | None = None,
+    is_profile_source: bool | None = None,
+    model_id: str = LOCAL_DEFAULT_MODEL_ID,
+) -> bool:
     """Update first-class sample flags."""
     client = SupabaseClient.get_client()
     if not client:
@@ -252,7 +303,7 @@ async def update_embedding_flags(embedding_id: str, *, is_reference: bool | None
         return True
 
     try:
-        client.table("embeddings").update(updates).eq("id", embedding_id).execute()
+        client.table(_embedding_table_for_model(model_id)).update(updates).eq("id", embedding_id).execute()
         return True
     except Exception as e:
         print(f"Failed to update embedding flags: {e}")
@@ -266,7 +317,10 @@ async def delete_embedding(embedding_id: str) -> bool:
         return False
 
     try:
-        client.table("embeddings").delete().eq("id", embedding_id).execute()
+        embedding = await get_embedding_by_id(embedding_id)
+        if not embedding:
+            return False
+        client.table(_embedding_table_for_model(embedding.get("model_id", LOCAL_DEFAULT_MODEL_ID))).delete().eq("id", embedding_id).execute()
         return True
     except Exception as e:
         print(f"Failed to delete embedding: {e}")
@@ -282,7 +336,11 @@ async def promote_embedding_reference(identity_id: str, embedding_id: str) -> bo
     updated_any = False
     for embedding in embeddings:
         current_id = embedding["id"]
-        updated = await update_embedding_flags(current_id, is_reference=current_id == embedding_id)
+        updated = await update_embedding_flags(
+            current_id,
+            is_reference=current_id == embedding_id,
+            model_id=embedding.get("model_id", LOCAL_DEFAULT_MODEL_ID),
+        )
         updated_any = updated_any or updated
 
     return updated_any
@@ -297,7 +355,11 @@ async def set_profile_sample(identity_id: str, embedding_id: str) -> bool:
     updated_any = False
     for embedding in embeddings:
         current_id = embedding["id"]
-        updated = await update_embedding_flags(current_id, is_profile_source=current_id == embedding_id)
+        updated = await update_embedding_flags(
+            current_id,
+            is_profile_source=current_id == embedding_id,
+            model_id=embedding.get("model_id", LOCAL_DEFAULT_MODEL_ID),
+        )
         updated_any = updated_any or updated
 
     if not updated_any:
@@ -357,6 +419,7 @@ async def add_embedding_to_identity(
     embedding: list[float],
     metadata: Optional[dict[str, Any]] = None,
     *,
+    model_id: str = LOCAL_DEFAULT_MODEL_ID,
     sample_kind: str = "face",
     image_path: str | None = None,
     capture_source: str | None = None,
@@ -375,13 +438,14 @@ async def add_embedding_to_identity(
         payload: dict[str, Any] = {
             "identity_id": identity_id,
             "embedding": embedding,
+            "model_id": model_id,
             "sample_kind": sample_kind,
             "image_path": image_path,
             "capture_source": capture_source,
             "capture_confidence": capture_confidence,
             "metadata": metadata or {},
         }
-        client.table("embeddings").insert(payload).execute()
+        client.table(_embedding_table_for_model(model_id)).insert(payload).execute()
         return True
     except Exception as e:
         print(f"Failed to add embedding to identity: {e}")
@@ -393,6 +457,7 @@ async def create_embedding_record(
     embedding: list[float],
     metadata: Optional[dict[str, Any]] = None,
     *,
+    model_id: str = LOCAL_DEFAULT_MODEL_ID,
     sample_kind: str = "face",
     image_path: str | None = None,
     capture_source: str | None = None,
@@ -413,6 +478,7 @@ async def create_embedding_record(
         payload: dict[str, Any] = {
             "identity_id": identity_id,
             "embedding": embedding,
+            "model_id": model_id,
             "sample_kind": sample_kind,
             "image_path": image_path,
             "capture_source": capture_source,
@@ -421,7 +487,7 @@ async def create_embedding_record(
             "is_profile_source": is_profile_source,
             "metadata": metadata or {},
         }
-        response = client.table("embeddings").insert(payload).execute()
+        response = client.table(_embedding_table_for_model(model_id)).insert(payload).execute()
         return _sample_payload(response.data[0]) if response.data else None
     except Exception as e:
         print(f"Failed to create embedding record: {e}")
@@ -604,6 +670,7 @@ async def move_detection_log_identity_links(from_identity_id: str, to_identity_i
     try:
         client.table("detection_logs").update({"current_identity_id": to_identity_id}).eq("current_identity_id", from_identity_id).execute()
         client.table("embeddings").update({"identity_id": to_identity_id}).eq("identity_id", from_identity_id).execute()
+        client.table("insightface_embeddings").update({"identity_id": to_identity_id}).eq("identity_id", from_identity_id).execute()
         return True
     except Exception as e:
         print(f"Failed to move identity links from detection log merge: {e}")

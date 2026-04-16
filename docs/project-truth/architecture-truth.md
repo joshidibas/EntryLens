@@ -99,6 +99,7 @@ Within the design docs:
 
 
 
+
 <!-- graphify-links:start -->
 ## Graph Links
 
@@ -107,5 +108,5 @@ Within the design docs:
 - Related file notes:
   - [[graphify-out/wiki/scripts/dev.ps1|scripts/dev.ps1]]
 - Related communities:
-  - [[graphify-out/wiki/communities/Community 36|Community 36]]
+  - [[graphify-out/wiki/communities/Community 37|Community 37]]
 <!-- graphify-links:end -->

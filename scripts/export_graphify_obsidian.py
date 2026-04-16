@@ -575,6 +575,8 @@ def main() -> None:
         )
     (wiki_root / "index.md").write_text("\n".join(index_lines).rstrip() + "\n", encoding="utf-8")
 
+    skipped_docs = []
+
     for doc_path in doc_paths:
         repo_doc = rel_posix(doc_path, root)
         source_files = doc_to_source_files.get(repo_doc, [])
@@ -610,7 +612,15 @@ def main() -> None:
             doc_path.read_text(encoding="utf-8"),
             "\n".join(block_lines),
         )
-        doc_path.write_text(updated_text, encoding="utf-8")
+        try:
+            doc_path.write_text(updated_text, encoding="utf-8")
+        except PermissionError as exc:
+            skipped_docs.append(
+                {
+                    "path": str(doc_path),
+                    "reason": f"permission denied: {exc}",
+                }
+            )
 
     print(
         json.dumps(
@@ -620,6 +630,7 @@ def main() -> None:
                 "node_notes": len(node_to_note),
                 "communities": len(community_note_paths),
                 "docs_updated": len(doc_paths),
+                "docs_skipped": skipped_docs,
             },
             indent=2,
         )

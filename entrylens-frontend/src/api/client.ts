@@ -1,6 +1,33 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 const API_KEY = import.meta.env.VITE_API_KEY ?? "";
 
+export class ApiError extends Error {
+  status: number;
+  errorCode?: string;
+  modelId?: string | null;
+  detail?: string;
+  suggestion?: string | null;
+
+  constructor(
+    message: string,
+    options: {
+      status: number;
+      errorCode?: string;
+      modelId?: string | null;
+      detail?: string;
+      suggestion?: string | null;
+    },
+  ) {
+    super(message);
+    this.name = "ApiError";
+    this.status = options.status;
+    this.errorCode = options.errorCode;
+    this.modelId = options.modelId;
+    this.detail = options.detail;
+    this.suggestion = options.suggestion;
+  }
+}
+
 export function buildApiUrl(path: string): string {
   return `${API_BASE_URL}${path}`;
 }
@@ -26,7 +53,16 @@ export async function apiFetch<T = unknown>(path: string, options: RequestInit =
     : await response.text();
 
   if (!response.ok) {
-    throw new Error(typeof payload === "string" ? payload : payload.detail ?? "Request failed.");
+    if (typeof payload === "string") {
+      throw new ApiError(payload || "Request failed.", { status: response.status, detail: payload || "Request failed." });
+    }
+    throw new ApiError(payload.detail ?? "Request failed.", {
+      status: response.status,
+      errorCode: payload.error,
+      modelId: payload.model_id,
+      detail: payload.detail ?? "Request failed.",
+      suggestion: payload.suggestion,
+    });
   }
 
   return payload as T;
@@ -45,7 +81,7 @@ export async function apiFetchBlob(path: string, options: RequestInit = {}): Pro
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(text || "Request failed.");
+    throw new ApiError(text || "Request failed.", { status: response.status, detail: text || "Request failed." });
   }
 
   return response.blob();
